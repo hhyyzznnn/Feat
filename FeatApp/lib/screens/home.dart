@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -14,7 +13,6 @@ class _HomePageState extends State<HomePage> {
   List<String?> homePosts = []; // 이미지 URL을 저장할 리스트
   Map ProfileImage = {}; // 유저 정보를 저장할 맵
 
-  
   final String userId = "user1"; // 유저 아이디 임시로 저장
 
   Future<void> loadPosts() async {
@@ -267,7 +265,7 @@ class _HomePageState extends State<HomePage> {
                             color: Color(0xff000000).withOpacity(0.25),
                             spreadRadius: 0,
                             blurRadius: 4,
-                            offset: Offset(0, 4) // changes position of shadow
+                            offset: Offset(0, 4)
                         ),
                       ],
                     ),

@@ -1,279 +1,248 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:async';
 import 'package:camera/camera.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/material.dart';
+import 'package:feat/screens/camera_preview.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'camera_preview.dart';
+import 'package:intl/intl.dart';
+
 
 class CameraPage extends StatefulWidget {
+  const CameraPage({super.key, required this.camera});
+
   final CameraDescription camera;
-  const CameraPage({Key? key, required this.camera}) : super(key: key);
 
   @override
-  _CameraPageState createState() => _CameraPageState();
+  State<CameraPage> createState() => _CameraPageState();
 }
 
 class _CameraPageState extends State<CameraPage> {
-  CameraController? _controller; // null safety 적용
-  Future<void>? _initializeControllerFuture; // 카메라 초기화 완료를 위한 Future
-  bool _isFlashOn = false; // 후레쉬 상태 플래그
-  late List<CameraDescription> _cameras; // 카메라 리스트
-  int _selectedCameraIndex = 0; // 현재 선택된 카메라 인덱스 (0: 후면, 1: 전면)
-  File? _galleryImage;
-  String? _imagePath;
-  final ImagePicker _picker = ImagePicker();
-  bool _isCameraInitialized = false; // 카메라 초기화 상태
+  late CameraController _controller;
+  late Future<void> _initializeControllerFuture;
+  bool isFlashOn = false; // 후레쉬 상태
+  bool isFrontCamera = false; // 현재 카메라 상태
+  double _currentZoomLevel = 1.0; // 현재 줌 레벨
+  double _maxZoomLevel = 4.0; // 최대 줌 레벨, 카메라에 따라 조정 필요
+  double _zoomFactor = 0.05; // 줌 변경 감도
 
-  @override
+
   void initState() {
     super.initState();
-    _requestPermissions();
+    _controller = CameraController(widget.camera, ResolutionPreset.high);
+    _initializeControllerFuture = _controller.initialize(); // 카메라 컨트롤러 초기화
   }
 
-  // 권한 요청 메서드
-  Future<void> _requestPermissions() async {
-    var status = await Permission.camera.status;
-    if (!status.isGranted) {
-      await Permission.camera.request();
-    }
-
-    if (await Permission.camera.isGranted) {
-      _initializeCameras();
-    } else {
-      _showPermissionDeniedDialog();
-    }
-  }
-
-  // 권한 거부 시 경고창
-  void _showPermissionDeniedDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('카메라 권한이 필요합니다'),
-          content: Text('카메라 기능을 사용하려면 권한이 필요합니다. 설정에서 권한을 허용해 주세요.'),
-          actions: [
-            TextButton(
-              child: Text('확인'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 카메라 초기화
-  Future<void> _initializeCameras() async {
-    try {
-      _cameras = await availableCameras();
-
-      if (_cameras.isNotEmpty) {
-        _initializeController();
-      } else {
-        print("사용 가능한 카메라가 없습니다.");
-      }
-    } catch (e) {
-      print("카메라 초기화 중 에러 발생: $e");
-    }
-  }
-
-  void _initializeController() async {
-    _controller = CameraController(
-      _cameras[_selectedCameraIndex],
-      ResolutionPreset.medium,
-    );
-
-    _initializeControllerFuture = _controller?.initialize();
-    await _initializeControllerFuture;
-
-    setState(() {
-      _isCameraInitialized = true; // 카메라 초기화 완료 상태
-    });
+  Future<void> _initializeCamera(CameraDescription camera) async {
+    _controller = CameraController(camera, ResolutionPreset.high);
+    _initializeControllerFuture = _controller.initialize();
   }
 
   @override
   void dispose() {
-    _controller?.dispose(); // 컨트롤러 해제
+    _controller.dispose();
     super.dispose();
   }
 
-  void _toggleFlash() async {
-    if (_controller?.value.isInitialized ?? false) {
-      _isFlashOn = !_isFlashOn;
-      await _controller?.setFlashMode(
-        _isFlashOn ? FlashMode.torch : FlashMode.off,
-      );
-      setState(() {});
+  Future<void> _toggleFlash() async {
+    if (_controller.value.flashMode == FlashMode.off) {
+      await _controller.setFlashMode(FlashMode.torch);
+      setState(() {
+        isFlashOn = true;
+      });
+    } else {
+      await _controller.setFlashMode(FlashMode.off);
+      setState(() {
+        isFlashOn = false;
+      });
     }
   }
 
-  void _switchCamera() {
+  Future<void> _toggleCamera() async {
+    final cameras = await availableCameras();
+    CameraDescription newCamera;
+
+    if (isFrontCamera) {
+      newCamera = cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.back);
+    } else {
+      newCamera = cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.front);
+    }
+
+    await _initializeCamera(newCamera);
     setState(() {
-      _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
+      isFrontCamera = !isFrontCamera; // 카메라 상태 반전
     });
-    _initializeController(); // 새로운 카메라로 초기화
   }
 
-  Future<void> _takePicture() async {
-    try {
-      await _initializeControllerFuture;
-      final image = await _controller!.takePicture(); // 사진 촬영
+  Future<String> getUploadUrl(String userId, String fileName) async {
+    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final response = await http.post(
+        Uri.parse('http://172.24.4.212:8080/upload/post'),
+        headers: {'Content-Type': 'application/json'},
+        body: '{"userId": "$userId", "fileName": "$fileName", "date": "$today"}'
+    );
 
-      // 앱의 문서 디렉토리에 사진 저장
-      final directory = await getApplicationDocumentsDirectory();
-      final path = '${directory.path}/${DateTime.now()}.png';
-
-      final file = File(path);
-      await file.writeAsBytes(await image.readAsBytes());
-
-      setState(() {
-        _imagePath = path; // 이미지 경로 저장
-      });
-
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => PreviewPage(imagePath: image.path), // 사진 미리보기 페이지로 이동
-        ),
-      );
-    } catch (e) {
-      print(e); // 에러 출력
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception(
+          'Failed to upload file: ${response.reasonPhrase}'); // 예외 던지기
     }
   }
 
-  // 갤러리에서 이미지 가져오기
-  Future<void> _pickImageFromGallery() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> uploadImageToUrl(String uploadUrl, File image) async {
+    try {
+      // 파일의 Content-Type을 파일 확장자로 추론
+      final mimeType = image.path.split('.').last == 'jpg'
+          ? 'image/jpeg'
+          : 'image/${image.path.split('.').last}';
 
-    if (pickedFile != null) {
-      setState(() {
-        _galleryImage = File(pickedFile.path); // 선택한 이미지 저장
-        _imagePath = pickedFile.path; // 이미지 경로 저장
-      });
-
-      // 프리뷰 화면으로 이동
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PreviewPage(imagePath: _imagePath!),
-        ),
+      // presigned URL을 통해 S3에 PUT 요청
+      final response = await http.put(
+        Uri.parse(uploadUrl),
+        headers: {
+          'Content-Type': mimeType, // Content-Type 설정
+        },
+        body: image.readAsBytesSync(), // 파일 데이터를 바이트 배열로 읽어오기
       );
+
+      if (response.statusCode == 200) {
+        print("Image uploaded successfully");
+      } else {
+        print("Image upload failed with status: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error occurred during image upload: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final containerWidth = size.width * 0.92;
-    final containerHeight = containerWidth * 16 / 9;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // 뒤로가기 버튼
-          Positioned(
-            top: size.height * 0.05,
-            left: size.width * 0.04,
-            child: IconButton(
-              icon: Icon(Icons.arrow_back, size: size.width * 0.075, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pop(); // 이전 화면으로 이동
-              },
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(size.height * 0.065),
+        child: AppBar(
+            leading: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: Icon(Icons.arrow_back, size: size.width * 0.075),
+                color: Colors.white),
+            backgroundColor: Colors.black),
+      ),
+      body: GestureDetector(
+        onScaleUpdate: (ScaleUpdateDetails details) {
+          setState(() {
+            // 스케일이 커질 때와 작아질 때 각각의 변화율을 설정
+            if (details.scale > 1) {
+              // 줌 인
+              _currentZoomLevel = (_currentZoomLevel + _zoomFactor).clamp(1.0, _maxZoomLevel);
+            } else if (details.scale < 1) {
+              // 줌 아웃
+              _currentZoomLevel = (_currentZoomLevel - _zoomFactor).clamp(1.0, _maxZoomLevel);
+            }
+            _controller.setZoomLevel(_currentZoomLevel);
+          });
+        },
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Column(
+              children: [
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: size.width * 0.04),
+                  width: size.width * 0.92,
+                  height: size.width * 0.92 * (16 / 9),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: FutureBuilder<void>(
+                      future: _initializeControllerFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          return CameraPreview(_controller);
+                        } else {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                Container(
+                  height: size.height * 0.1,
+                  color: Colors.black,
+                ),
+              ],
             ),
-          ),
-          // 카메라 미리보기 부분
-          if (_isCameraInitialized && _controller != null)
             Positioned(
-              bottom: size.height * 0.13,
-              left: size.width * 0.04,
-              right: size.width * 0.04,
-              child: Container(
-                width: containerWidth,
-                height: containerHeight,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: CameraPreview(_controller!),
-                ),
-              ),
-            )
-          else
-            Center(child: CircularProgressIndicator()), // 카메라가 초기화되지 않았을 때 로딩 표시
-          // 플래쉬 버튼
-          Positioned(
-            left: size.width * 0.06,
-            bottom: size.height * 0.14,
-            child: IconButton(
-              icon: SvgPicture.asset(
-                _isFlashOn ? 'assets/icons/flash_on.svg' : 'assets/icons/flash_off.svg',
-              ),
-              onPressed: _toggleFlash,
-            ),
-          ),
-          // 카메라 전환 버튼
-          Positioned(
-            right: size.width * 0.06,
-            bottom: size.height * 0.14,
-            child: IconButton(
-              icon: SvgPicture.asset('assets/icons/refresh.svg'),
-              onPressed: _switchCamera,
-            ),
-          ),
-          // 사진 촬영 버튼
-          Positioned(
-            bottom: size.height * 0.05,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: InkWell(
-                onTap: _takePicture,
-                customBorder: CircleBorder(),
+              bottom: size.height * 0.015                      ,
+              child: GestureDetector(
+                onTap: () async {
+                  try {
+                    await _initializeControllerFuture;
+
+                    final image = await _controller.takePicture();
+                    File imageFile = File(image.path); // File 객체 생성
+
+                    if (!context.mounted) return;
+
+                    // 업로드 URL을 가져온 후 이미지를 업로드
+                    String uploadUrl = await getUploadUrl('yourUserId', 'image.jpg');
+                    await uploadImageToUrl(uploadUrl, imageFile);
+
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PreviewPage(imagePath: image.path),
+                      ),
+                    );
+                  } catch (e) {
+                    print(e);
+                  }
+                },
                 child: Container(
-                  width: size.width * 0.3,
-                  height: size.width * 0.3,
+                  width: size.width * 0.275,
+                  height: size.width * 0.275,
                   decoration: BoxDecoration(
-                    color: Color(0xff3F3F3F),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 10),
+                    color: Color(0xff3f3f3f),
+                    borderRadius: BorderRadius.circular(9999),
+                    border: Border.all(
+                        width: size.width * 0.015, color: Colors.black),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Color(0xff000000).withOpacity(0.25),
+                          spreadRadius: 0,
+                          blurRadius: 4,
+                          offset: Offset(0, 4)),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-          // 갤러리에서 사진 가져오기 버튼
-          Positioned(
-            left: size.width * 0.07,
-            bottom: size.height * 0.05,
-            child: GestureDetector(
-              onTap: _pickImageFromGallery,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xffCDCDCD),
-                  borderRadius: BorderRadius.circular(10),
+            Positioned(
+              bottom: size.height * 0.15,
+              right: size.width * 0.1,
+              child: IconButton(
+                icon: SvgPicture.asset(
+                  isFlashOn ? 'assets/icons/flash_on.svg' : 'assets/icons/flash_off.svg',
                 ),
-                width: size.width * 0.13,
-                height: size.width * 0.13,
-                child: _galleryImage != null
-                    ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    _galleryImage!,
-                    fit: BoxFit.cover,
-                  ),
-                )
-                    : Icon(Icons.photo, color: Colors.black),
+                onPressed: _toggleFlash,
               ),
             ),
-          ),
-        ],
+            // Camera switch button
+            Positioned(
+              bottom: size.height * 0.15,
+              left: size.width * 0.1,
+              child: IconButton(
+                icon: SvgPicture.asset('assets/icons/refresh.svg'),
+                onPressed: _toggleCamera,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

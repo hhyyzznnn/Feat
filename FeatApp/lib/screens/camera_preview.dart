@@ -10,6 +10,7 @@ class PreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final size = MediaQuery.of(context).size;
     final containerWidth = size.width * 0.92;
     final containerHeight = containerWidth * 16 / 9;
@@ -34,7 +35,6 @@ class PreviewPage extends StatelessWidget {
               ),
             ),
           ),
-          // 뒤로 가기 버튼
           Positioned(
             top: size.height * 0.02,
             left: size.width * 0.02,
@@ -45,7 +45,6 @@ class PreviewPage extends StatelessWidget {
               },
             ),
           ),
-          // + 버튼
           Positioned(
             bottom: size.height * 0.05,
             left: 0,
@@ -75,7 +74,6 @@ class PreviewPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                // 중앙에 + 모양의 SVG 추가
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -83,12 +81,10 @@ class PreviewPage extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => MusicRecPage()),
                     );
                   },
-                  child: SvgPicture.asset('assets/icons/plus.svg',),
                 ),
               ],
             ),
           )
-
         ],
       ),
     );

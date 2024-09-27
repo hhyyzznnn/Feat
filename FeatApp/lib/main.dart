@@ -6,7 +6,7 @@ import 'screens/profile.dart';
 import 'screens/signup.dart';
 import 'screens/signin.dart';
 import 'screens/alarm.dart';
-import 'screens/camera2.dart';
+import 'screens/camera.dart';
 import 'screens/calender.dart';
 import 'screens/friendpage.dart';
 import 'screens/music_rec.dart';
@@ -20,9 +20,9 @@ void main() async {
 }
 
 class FeatApp extends StatelessWidget {
-  final CameraDescription? firstCamera;
+  final CameraDescription firstCamera;
 
-  const FeatApp({super.key, this.firstCamera});
+  const FeatApp({super.key, required this.firstCamera});
 
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
@@ -55,7 +55,7 @@ class FeatApp extends StatelessWidget {
         'calender': (context) => CalenderPage(),
         'friendpage': (context) => FriendPage(),
         'ootd': (context) => ootdHomePage(),
-        'rec': (context) => MusicRecPage(),
+        'rec': (context) => MusicRecPage()
       },
     );
   }

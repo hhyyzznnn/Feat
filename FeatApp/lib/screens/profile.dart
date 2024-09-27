@@ -8,8 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:feat/screens/signin.dart';
 import 'package:http/http.dart' as http;
 import 'package:feat/utils/appbar.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart';
 
 class ProFilePage extends StatefulWidget {
   const ProFilePage({super.key});
