@@ -191,7 +191,7 @@ class _CameraPageState extends State<CameraPage> {
                     if (!context.mounted) return;
 
                     // 업로드 URL을 가져온 후 이미지를 업로드
-                    String uploadUrl = await getUploadUrl('yourUserId', 'image.jpg');
+                    String uploadUrl = await getUploadUrl('user1', 'image.jpg');
                     await uploadImageToUrl(uploadUrl, imageFile);
 
                     await Navigator.of(context).push(

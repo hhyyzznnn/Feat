@@ -39,7 +39,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadProfile() async {
-
     final url = Uri.parse('http://172.24.4.212:8080/load/userInfo');
     try {
       final response = await http.post(
@@ -50,7 +49,8 @@ class _HomePageState extends State<HomePage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          ProfileImage = Map.from(jsonDecode(response.body)); // JSON 데이터를 리스트로 변환
+          ProfileImage =
+              Map.from(jsonDecode(response.body)); // JSON 데이터를 리스트로 변환
           print(ProfileImage);
         });
       } else {
@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context)  {
+  Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -104,21 +104,22 @@ class _HomePageState extends State<HomePage> {
                 },
                 borderRadius: BorderRadius.circular(size.height * 0.03),
                 child: Container(
-                  height: size.height * 0.045,  // 원형을 위한 height
-                  width: size.height * 0.045,   // height와 동일한 width로 설정
+                  height: size.height * 0.045, // 원형을 위한 height
+                  width: size.height * 0.045, // height와 동일한 width로 설정
                   decoration: const BoxDecoration(
-                    shape: BoxShape.circle,  // 원형을 보장
+                    shape: BoxShape.circle, // 원형을 보장
                   ),
                   child: ClipOval(
-                    child: ProfileImage['profile'] != null && ProfileImage['profile'].isNotEmpty
+                    child: ProfileImage['profile'] != null &&
+                            ProfileImage['profile'].isNotEmpty
                         ? Image.network(
-                      ProfileImage['profile'],
-                      fit: BoxFit.cover,
-                    )
+                            ProfileImage['profile'],
+                            fit: BoxFit.cover,
+                          )
                         : Icon(
-                      Icons.person,
-                      size: size.height * 0.035,
-                    ),
+                            Icons.person,
+                            size: size.height * 0.035,
+                          ),
                   ),
                 ),
               ),
@@ -146,17 +147,18 @@ class _HomePageState extends State<HomePage> {
                           height: size.height * 0.06,
                           decoration: BoxDecoration(
                             borderRadius:
-                            BorderRadius.circular(size.width * 0.03), color: Color(0xff3f3f3f),
+                                BorderRadius.circular(size.width * 0.03),
+                            color: Color(0xff3f3f3f),
                             boxShadow: [
                               BoxShadow(
                                   color: Color(0xff000000).withOpacity(0.25),
                                   spreadRadius: 0,
                                   blurRadius: 4,
-                                  offset: Offset(0, 4) // changes position of shadow
-                              ),
+                                  offset:
+                                      Offset(0, 4) // changes position of shadow
+                                  ),
                             ],
-                          )
-                      ),
+                          )),
                       Center(child: Text('SoundWave'))
                     ],
                   )
@@ -171,7 +173,7 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, index) {
                   final imageUrl = homePosts[index];
                   return Container(
-                    margin: EdgeInsets.only(left: 15,right: 30), // 좌우 여백 설정
+                    margin: EdgeInsets.only(left: 15, right: 30), // 좌우 여백 설정
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10), // 모서리를 둥글게 설정
                       boxShadow: [
@@ -183,17 +185,17 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-                    child: ClipRRect(  // 경계에 맞게 자르기
+                    child: ClipRRect(
+                      // 경계에 맞게 자르기
                       borderRadius: BorderRadius.circular(10),
                       child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: imageUrl != null
-                            ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                        )
-                            : Center(child: Text('No Image'))
-                      ),
+                          aspectRatio: 16 / 9,
+                          child: imageUrl != null
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                )
+                              : Center(child: Text('No Image'))),
                     ),
                   );
                 },
@@ -212,7 +214,7 @@ class _HomePageState extends State<HomePage> {
                             spreadRadius: 0,
                             blurRadius: 4,
                             offset: Offset(0, 4) // changes position of shadow
-                        ),
+                            ),
                       ],
                     ),
                     margin: EdgeInsets.all(size.width * 0.05),
@@ -245,7 +247,7 @@ class _HomePageState extends State<HomePage> {
                           spreadRadius: 0,
                           blurRadius: 4,
                           offset: Offset(0, 4) // changes position of shadow
-                      ),
+                          ),
                     ],
                   ),
                 ),
@@ -254,24 +256,23 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, 'camera');
                   },
                   child: Container(
-                    width: size.width * 0.275,
-                    height: size.width * 0.275,
-                    decoration: BoxDecoration(
-                      color: Color(0xff3f3f3f),
-                      borderRadius: BorderRadius.circular(9999),
-                      border: Border.all(width: size.width * 0.015, color: Colors.white),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Color(0xff000000).withOpacity(0.25),
-                            spreadRadius: 0,
-                            blurRadius: 4,
-                            offset: Offset(0, 4)
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.add,
-                        color: Colors.white, size: size.width * 0.12)
-                  ),
+                      width: size.width * 0.275,
+                      height: size.width * 0.275,
+                      decoration: BoxDecoration(
+                        color: Color(0xff3f3f3f),
+                        borderRadius: BorderRadius.circular(9999),
+                        border: Border.all(
+                            width: size.width * 0.015, color: Colors.white),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Color(0xff000000).withOpacity(0.25),
+                              spreadRadius: 0,
+                              blurRadius: 4,
+                              offset: Offset(0, 4)),
+                        ],
+                      ),
+                      child: Icon(Icons.add,
+                          color: Colors.white, size: size.width * 0.12)),
                 )
               ],
             )
@@ -281,7 +282,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
 
 /*
 class SoundWaveform extends StatefulWidget {
