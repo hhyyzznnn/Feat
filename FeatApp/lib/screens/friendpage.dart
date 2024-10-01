@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:feat/utils/appbar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:feat/utils/saveId.dart';
 
 class FriendPage extends StatefulWidget {
   const FriendPage({super.key});
@@ -13,14 +14,22 @@ class FriendPage extends StatefulWidget {
 class _FriendPageState extends State<FriendPage> {
   List<String?> friends = [];// 검색된 친구 목록 저장
   List<String?> searchResults = [];  // 검색된 유저 목록 저장
-  final String userId = "user1";
+ 
   String searchQuery = "";
   bool isSearching = false; // 검색 상태를 확인하는 변수
+  String? userId;
+
+  Future<void> loadUserId() async {
+    userId = await saveId();
+    // userId를 사용하여 추가 작업 수행
+    print('User ID: $userId');
+  }
 
   @override
   void initState() {
     super.initState();
     loadFriends();
+    loadUserId();
   }
 
   // 기존 친구 목록을 불러오는 함수

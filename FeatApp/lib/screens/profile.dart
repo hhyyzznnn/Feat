@@ -8,6 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:feat/screens/signin.dart';
 import 'package:http/http.dart' as http;
 import 'package:feat/utils/appbar.dart';
+<<<<<<< Updated upstream
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
+=======
+import 'package:feat/utils/saveId.dart';
+>>>>>>> Stashed changes
 
 class ProFilePage extends StatefulWidget {
   const ProFilePage({super.key});
@@ -19,13 +25,11 @@ class ProFilePage extends StatefulWidget {
 class _ProFilePageState extends State<ProFilePage> {
   File? _image;
   final ImagePicker picker = ImagePicker();
+  String? userId;
 
   Map userSetting = {}; // 유저 세팅을 저장할 맵
   Map userInfo = {}; // 유저 정보를 저장할 맵
   Map ProfileImage = {}; // 프로필 사진 주소를 저장할 맵
-
-
-  final String userId = "user1"; // 임의로 작성한 유저 아이디
 
   Future<void> sendUserId(String userId, String endpoint) async {
     final url =
@@ -99,7 +103,6 @@ class _ProFilePageState extends State<ProFilePage> {
   } // 유저 정보 불러오는 함수 (서버)
 
   Future<void> loadProfile() async {
-
     final url = Uri.parse('http://172.24.4.212:8080/load/userInfo');
     try {
       final response = await http.post(
@@ -110,7 +113,8 @@ class _ProFilePageState extends State<ProFilePage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          ProfileImage = Map.from(jsonDecode(response.body)); // JSON 데이터를 리스트로 변환
+          ProfileImage =
+              Map.from(jsonDecode(response.body)); // JSON 데이터를 리스트로 변환
           print(ProfileImage);
         });
       } else {
@@ -157,6 +161,12 @@ class _ProFilePageState extends State<ProFilePage> {
     }
   } // 계정 삭제 함수
 
+  Future<void> loadUserId() async {
+    userId = await saveId();
+    // userId를 사용하여 추가 작업 수행
+    print('User ID: $userId');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -164,12 +174,14 @@ class _ProFilePageState extends State<ProFilePage> {
     loadInfo();
     loadSettings();
     loadProfile();
+    loadUserId();
+
   }
 
-    Future<void> requestPermissions() async {
-      final camStatus = await Permission.camera.request();
-      final phoStatus = await Permission.photos.request();
-    } // 카메라, 갤러리 권한 (미사용)
+  Future<void> requestPermissions() async {
+    final camStatus = await Permission.camera.request();
+    final phoStatus = await Permission.photos.request();
+  } // 카메라, 갤러리 권한 (미사용)
 
   Future<void> pickImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -181,13 +193,12 @@ class _ProFilePageState extends State<ProFilePage> {
       String fileName = pickedFile.path.split('/').last;
       print('File name: $fileName');
 
-      String? uploadUrl = await getUploadUrl(userId, fileName);
+      String? uploadUrl = await getUploadUrl(userId!, fileName);
 
       if (uploadUrl != null) {
         await uploadImageToUrl(uploadUrl, _image!);
         print('File name: $fileName');
         loadProfile();
-
       } else {
         print('Failed to retrieve upload URL.');
       }
@@ -223,7 +234,6 @@ class _ProFilePageState extends State<ProFilePage> {
         });
   } // 사진 촬영 or 갤러리 선택
 
-
   bool reqNotifications = false;
   bool friNotifications = false;
   bool allNotifications = false; // 서버 연결 후 코드 삭제할 예정
@@ -231,30 +241,29 @@ class _ProFilePageState extends State<ProFilePage> {
   void toggleReqNotifications(bool? value) {
     setState(() {
       reqNotifications = value ?? false;
-      sendUserId(userId, 'friend/request');
+      sendUserId(userId!, 'friend/request');
     });
   }
 
   void toggleFriNotifications(bool? value) {
     setState(() {
       friNotifications = value ?? false;
-      sendUserId(userId, 'friend/alarm');
+      sendUserId(userId!, 'friend/alarm');
     });
   }
 
   void toggleAllNotifications(bool? value) {
     setState(() {
       allNotifications = value ?? false;
-      sendUserId(userId, 'entire/alarm');
+      sendUserId(userId!, 'entire/alarm');
     });
   }
 
   Future<String> getUploadUrl(String userId, String fileName) async {
     final response = await http.post(
-      Uri.parse('http://172.24.4.212:8080/upload/profile'),
-      headers: {'Content-Type': 'application/json'},
-      body: '{"userId": "$userId", "fileName": "$fileName"}'
-    );
+        Uri.parse('http://172.24.4.212:8080/upload/profile'),
+        headers: {'Content-Type': 'application/json'},
+        body: '{"userId": "$userId", "fileName": "$fileName"}');
 
     if (response.statusCode == 200) {
       return response.body;
@@ -375,11 +384,14 @@ class _ProFilePageState extends State<ProFilePage> {
                             padding: EdgeInsets.all(size.width * 0.05),
                             child: CircleAvatar(
                               radius: size.width * 0.2,
-                              backgroundImage: ProfileImage['profile'] != null && ProfileImage['profile'].isNotEmpty
-                                  ? NetworkImage(ProfileImage['profile']) as ImageProvider
-                                  : (_image != null
-                                  ? FileImage(_image!)
-                                  : const AssetImage('hanni.jpg')),
+                              backgroundImage:
+                                  ProfileImage['profile'] != null &&
+                                          ProfileImage['profile'].isNotEmpty
+                                      ? NetworkImage(ProfileImage['profile'])
+                                          as ImageProvider
+                                      : (_image != null
+                                          ? FileImage(_image!)
+                                          : const AssetImage('hanni.jpg')),
                             ),
                           ),
                           Padding(

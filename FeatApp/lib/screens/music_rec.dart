@@ -9,29 +9,22 @@ class MusicRecPage extends StatefulWidget {
 }
 
 class _MusicRecPageState extends State<MusicRecPage> {
-  final List<String> musicList = [
-    'Song 1',
-    'Song 2',
-    'Song 3',
-    'Song 4',
-    'Song 5',
-  ];
+  final List<String> musicList = ['Song_1', 'Song_2', 'Song_3', 'Song_4', 'Song_5']; // 서버 연결 후 삭제 예정
 
   late AudioPlayer audioPlayer;
-  int currentSongIndex = 0; // 현재 재생 중인 노래 인덱스
+  int currentSongIndex = 0;
   bool isPlaying = false;
   double volume = 0.5;
-  Duration currentDuration = Duration.zero; // 현재 재생된 시간
-  Duration totalDuration = Duration.zero; // 전체 음악 길이
+  Duration currentDuration = Duration.zero;
+  Duration totalDuration = Duration.zero;
 
   @override
   void initState() {
     super.initState();
     audioPlayer = AudioPlayer();
-    audioPlayer.setVolume(volume); // 초기 볼륨 설정
-    _playMusic(); // 시작 시 첫 곡 재생
+    audioPlayer.setVolume(volume);
+    _playMusic();
 
-// 음악의 진행 시간 및 전체 길이 업데이트
     audioPlayer.onPositionChanged.listen((Duration position) {
       setState(() {
         currentDuration = position;
@@ -46,14 +39,13 @@ class _MusicRecPageState extends State<MusicRecPage> {
   }
 
   void _playMusic() async {
-    String url = 'https://example.com/${musicList[currentSongIndex]}.mp3'; // 각 곡의 URL로 수정
-    await audioPlayer.play(UrlSource(url));
+    // String url = 'https://example.com/${musicList[currentSongIndex]}.mp3'; // 각 곡의 URL로 수정
+    await audioPlayer.play(AssetSource('sample.mp3'));
     await audioPlayer.setVolume(volume);
     setState(() {
       isPlaying = true;
-      currentDuration = Duration.zero; // 음악 재생 시작 시 초기화
+      currentDuration = Duration.zero;
 
-// 전체 음악 길이를 가져오기
       audioPlayer.getDuration().then((duration) {
         setState(() {
           totalDuration = duration ?? Duration.zero;
@@ -103,37 +95,31 @@ class _MusicRecPageState extends State<MusicRecPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery
-        .of(context)
-        .size;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: buildAppBar(context, ' '),
+      appBar: buildAppBar(context, ''),
       body: Stack(
         children: [
-// 음악 재생 버튼
           Align(
             alignment: Alignment(0, 0.65),
             child: SizedBox(
-              width: size.width * 0.65,
+              width: size.width * 0.85,
               height: size.height * 0.13,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-// 뒤로 감기 버튼
                   IconButton(
                     icon: SvgPicture.asset('assets/icons/rewind.svg'),
                     onPressed: _rewindMusic,
                   ),
-// 정지 버튼
+                  // 정지 버튼
                   IconButton(
                     icon: isPlaying
                         ? SvgPicture.asset('assets/icons/pause.svg')
-                        : SvgPicture.asset('assets/icons/play.svg'),
-                    // Play/Pause 아이콘
+                        : Icon(Icons.play_arrow, size: 60),
                     onPressed: isPlaying ? _pauseMusic : _resumeMusic,
                   ),
-// 앞으로 감기 버튼
                   IconButton(
                     icon: SvgPicture.asset('assets/icons/fast_forward.svg'),
                     onPressed: _fastForwardMusic,
@@ -142,7 +128,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
               ),
             ),
           ),
-// 음악 볼륨 조정
+          // 음악 볼륨 조정
           Align(
             alignment: Alignment(0, 0.8),
             child: SizedBox(
@@ -150,7 +136,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
               height: size.height * 0.05,
               child: Row(
                 children: [
-// volume down 버튼
+                  // volume down 버튼
                   IconButton(
                     icon: SvgPicture.asset('assets/icons/volume_down.svg'),
                     onPressed: () {
@@ -162,13 +148,14 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       });
                     },
                   ),
-// volume 조정 영역
+                  // volume 조정 영역
                   GestureDetector(
                     onHorizontalDragUpdate: (details) {
                       setState(() {
-// 드래그의 위치를 비율로 계산하여 볼륨 조정
-                        double newVolume = (details.localPosition.dx /
-                            (size.width * 0.66)).clamp(0.0, 1.0);
+                        // 드래그의 위치를 비율로 계산하여 볼륨 조정
+                        double newVolume =
+                            (details.localPosition.dx / (size.width * 0.66))
+                                .clamp(0.0, 1.0);
                         volume = newVolume;
                         audioPlayer.setVolume(volume);
                       });
@@ -182,7 +169,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       ),
                       child: Stack(
                         children: [
-// 현재 볼륨에 따라 색상 변화
+                          // 현재 볼륨에 따라 색상 변화
                           Positioned(
                             left: 0,
                             right: (1 - volume) * size.width * 0.66,
@@ -198,7 +185,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       ),
                     ),
                   ),
-// volume up 버튼
+                  // volume up 버튼
                   IconButton(
                     icon: SvgPicture.asset('assets/icons/volume_up.svg'),
                     onPressed: () {
@@ -214,7 +201,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
               ),
             ),
           ),
-// Main music
+          // Main music
           Align(
             alignment: Alignment(0, -0.9),
             child: Container(
@@ -236,7 +223,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
               ),
               child: Row(
                 children: [
-// 앨범 커버 이미지
+                  // 앨범 커버 이미지
                   Container(
                     width: size.width * 0.16,
                     height: size.width * 0.16,
@@ -296,7 +283,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
               color: Color(0xFFc7c7c7),
             ),
           ),
-// music list
+          // music list
           Align(
             alignment: Alignment(0, -0.3),
             child: SizedBox(
@@ -324,7 +311,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
                     ),
                     child: Row(
                       children: [
-// 앨범 커버 이미지
+                        // 앨범 커버 이미지
                         Container(
                           width: size.width * 0.12,
                           height: size.width * 0.12,
@@ -384,7 +371,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
               height: size.height * 0.04,
               child: Stack(
                 children: [
-// music box
+                  // music box
                   Align(
                     alignment: Alignment(0, -1),
                     child: Container(
@@ -397,10 +384,10 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       child: GestureDetector(
                         onHorizontalDragUpdate: (details) {
                           setState(() {
-// 배경 Container 안에서만 슬라이드 계산
-                            double newPosition = (details.localPosition.dx /
-                                (size.width * 0.9))
-                                .clamp(0.0, 1.0); // 범위를 0.0 ~ 1.0 사이로 제한
+                            // 배경 Container 안에서만 슬라이드 계산
+                            double newPosition =
+                                (details.localPosition.dx / (size.width * 0.9))
+                                    .clamp(0.0, 1.0); // 범위를 0.0 ~ 1.0 사이로 제한
                             currentDuration = Duration(
                                 seconds: (newPosition * totalDuration.inSeconds)
                                     .toInt());
@@ -409,12 +396,14 @@ class _MusicRecPageState extends State<MusicRecPage> {
                         },
                         child: Stack(
                           children: [
-// 현재 재생된 부분을 색상으로 표시
+                            // 현재 재생된 부분을 색상으로 표시
                             Positioned(
                               left: 0,
-                              right: (1 - currentDuration.inSeconds /
-                                  totalDuration.inSeconds) *
-                                  size.width * 0.9,
+                              right: (1 -
+                                      currentDuration.inSeconds /
+                                          totalDuration.inSeconds) *
+                                  size.width *
+                                  0.9,
                               child: Container(
                                 height: size.height * 0.011, // 재생된 부분의 높이
                                 decoration: BoxDecoration(
@@ -428,7 +417,7 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       ),
                     ),
                   ),
-// 현재 재생 시간
+                  // 현재 재생 시간
                   Align(
                     alignment: Alignment(-1, 1),
                     child: Text(
@@ -445,23 +434,21 @@ class _MusicRecPageState extends State<MusicRecPage> {
                   ),
                 ],
               ),
-
-
-/*child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // 현재 재생 시간
-                  Text(
-                    formatDuration(currentDuration),
-                    style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
-                  ),
-                  // 전체 재생 시간
-                  Text(
-                    formatDuration(totalDuration),
-                    style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
-                  ),
-                ],
-              ),*/
+              /*child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // 현재 재생 시간
+                    Text(
+                      formatDuration(currentDuration),
+                      style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
+                    ),
+                    // 전체 재생 시간
+                    Text(
+                      formatDuration(totalDuration),
+                      style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
+                    ),
+                  ],
+                ),*/
             ),
           ),
         ],

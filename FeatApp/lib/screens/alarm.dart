@@ -55,24 +55,26 @@ class AlarmBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(context, 'calendar');
       },
       child: Container(
-        margin: EdgeInsets.fromLTRB(25, 10, 20, 10),
-        padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
-        width: 200,
-        height: 90,
+        margin: EdgeInsets.symmetric(vertical: size.height * 0.01, horizontal: size.width * 0.025),
+        padding: EdgeInsets.symmetric(horizontal: size.width * 0.045),
+        width: size.width * 0.9,
+        height: size.height * 0.115,
         decoration: BoxDecoration(
           color: Color(0xff3F3F3F),
-          borderRadius: BorderRadius.all(Radius.circular(30)),
+          borderRadius: BorderRadius.all(Radius.circular(25)),
           boxShadow: [
             BoxShadow(
               color: Color(0xff000000).withOpacity(0.25),
               spreadRadius: 0,
               blurRadius: 10,
-              offset: Offset(0, 4), // changes position of shadow
+              offset: Offset(0, 4)
             ),
           ],
         ),
@@ -81,24 +83,24 @@ class AlarmBox extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(100.0),
-              child: Icon(Icons.circle, color: Color(0xffebebeb), size: 60 ),
+              child: Icon(Icons.circle, color: Color(0xffebebeb), size: size.width * 0.2),
             ),
             SizedBox(
-                width: 100,
-                height: 90,
+                width: size.width * 0.45,
+                height: size.height * 0.15,
                 child: Column(
                   children: [
                     Align(
                       alignment: Alignment.topLeft,
                       child:Container(
                           margin: EdgeInsets.fromLTRB(20, 22, 0, 0),
-                          child: Text('username', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Colors.white))),
+                          child: Text('Username', style: TextStyle(fontSize: size.width * 0.05, fontWeight: FontWeight.bold, color: Colors.white))),
                     ),
                     Align(
                       alignment: Alignment.topLeft,
                       child: Container(
                           margin: EdgeInsets.fromLTRB(20, 0, 0, 0),
-                          child: Text('내용', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white))),
+                          child: Text('내용', style: TextStyle(fontSize: size.width * 0.04, fontWeight: FontWeight.w400, color: Colors.white))),
                     )
                   ],
                 )
