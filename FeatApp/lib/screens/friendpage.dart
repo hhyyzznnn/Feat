@@ -34,7 +34,7 @@ class _FriendPageState extends State<FriendPage> {
 
   // 기존 친구 목록을 불러오는 함수
   Future<void> loadFriends() async {
-    final url = Uri.parse('http://172.24.4.212:8080/search/');
+    final url = Uri.parse('http://192.168.116.212:8080/search/');
     try {
       final response = await http.post(
         url,
@@ -58,7 +58,7 @@ class _FriendPageState extends State<FriendPage> {
 
   // 검색어에 맞는 모든 유저를 불러오는 함수
   Future<void> searchUsers(String query) async {
-    final url = Uri.parse('http://172.24.4.212:8080/searchUsers/');
+    final url = Uri.parse('http://192.168.116.212:8080/searchUsers/');
     try {
       final response = await http.post(
         url,

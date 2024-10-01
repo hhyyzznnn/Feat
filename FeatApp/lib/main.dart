@@ -17,7 +17,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
   final firstCamera = cameras.isNotEmpty ? cameras.first : null; // 카메라가 없을 경우 처리
-  runApp(MaterialApp(home: MusicRecPage())); //FeatApp(firstCamera: firstCamera)
+  runApp(FeatApp(firstCamera: firstCamera)); //FeatApp(firstCamera: firstCamera)
 }
 
 class FeatApp extends StatelessWidget {
@@ -90,7 +90,8 @@ class FeatApp extends StatelessWidget {
   }
 }
 
-/* import 'package:flutter/material.dart';
+/*
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:camera/camera.dart';
 import 'screens/home.dart';
@@ -119,7 +120,7 @@ class FeatApp extends StatelessWidget {
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString('userId');
-    return userId != null; // '=='를 '!='로 수정해야 함. 코딩 위해서 임의로 바꿔놓음
+    return userId == null; // '=='를 '!='로 수정해야 함. 코딩 위해서 임의로 바꿔놓음
   }
 
   @override
@@ -151,4 +152,5 @@ class FeatApp extends StatelessWidget {
       },
     );
   }
-} */
+}
+*/

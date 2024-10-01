@@ -8,12 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:feat/screens/signin.dart';
 import 'package:http/http.dart' as http;
 import 'package:feat/utils/appbar.dart';
-<<<<<<< Updated upstream
-import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart';
-=======
 import 'package:feat/utils/saveId.dart';
->>>>>>> Stashed changes
 
 class ProFilePage extends StatefulWidget {
   const ProFilePage({super.key});
@@ -33,7 +28,7 @@ class _ProFilePageState extends State<ProFilePage> {
 
   Future<void> sendUserId(String userId, String endpoint) async {
     final url =
-        Uri.parse('http://172.24.4.212:8080/edit/$endpoint'); // 엔드포인트를 변수로 사용
+        Uri.parse('http://192.168.116.212:8080/edit/$endpoint'); // 엔드포인트를 변수로 사용
 
     try {
       final response = await http.post(
@@ -54,7 +49,7 @@ class _ProFilePageState extends State<ProFilePage> {
 
   Future<void> loadSettings() async {
     final url =
-        Uri.parse('http://172.24.4.212:8080/load/alarmSetting'); // 설정 서버 주소 추가
+        Uri.parse('http://192.168.116.212:8080/load/alarmSetting'); // 설정 서버 주소 추가
     try {
       final response = await http.post(
         url,
@@ -81,7 +76,7 @@ class _ProFilePageState extends State<ProFilePage> {
 
   Future<void> loadInfo() async {
     final url =
-        Uri.parse('http://172.24.4.212:8080/load/userInfo'); // 유저 정보 서버 주소 추가
+        Uri.parse('http://192.168.116.212:8080/load/userInfo'); // 유저 정보 서버 주소 추가
     try {
       final response = await http.post(
         url,
@@ -103,7 +98,7 @@ class _ProFilePageState extends State<ProFilePage> {
   } // 유저 정보 불러오는 함수 (서버)
 
   Future<void> loadProfile() async {
-    final url = Uri.parse('http://172.24.4.212:8080/load/userInfo');
+    final url = Uri.parse('http://192.168.116.212:8080/load/userInfo');
     try {
       final response = await http.post(
         url,
@@ -261,7 +256,7 @@ class _ProFilePageState extends State<ProFilePage> {
 
   Future<String> getUploadUrl(String userId, String fileName) async {
     final response = await http.post(
-        Uri.parse('http://172.24.4.212:8080/upload/profile'),
+        Uri.parse('http://192.168.116.212:8080/upload/profile'),
         headers: {'Content-Type': 'application/json'},
         body: '{"userId": "$userId", "fileName": "$fileName"}');
 

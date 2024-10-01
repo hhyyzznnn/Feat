@@ -31,7 +31,7 @@ class _ootdHomePageState extends State<ootdHomePage> {
   }
 
   Future<void> loadPosts() async {
-    final url = Uri.parse('http://172.24.4.212:8080/load/post/bydate');
+    final url = Uri.parse('http://192.168.116.212:8080/load/post/bydate');
     try {
       final response = await http.post(
         url,
@@ -53,7 +53,7 @@ class _ootdHomePageState extends State<ootdHomePage> {
   }
 
   Future<void> loadProfile() async {
-    final url = Uri.parse('http://172.24.4.212:8080/load/userInfo');
+    final url = Uri.parse('http://192.168.116.212:8080/load/userInfo');
     try {
       final response = await http.post(
         url,

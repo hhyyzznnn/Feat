@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-<<<<<<< Updated upstream
-import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
-=======
 import 'package:feat/utils/saveId.dart';
 
->>>>>>> Stashed changes
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -18,21 +13,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<String?> homePosts = []; // 이미지 URL을 저장할 리스트
   Map ProfileImage = {}; // 유저 정보를 저장할 맵
-  String? userId;
+  final String userId = "user1";
 
-<<<<<<< Updated upstream
-  
-  final String userId = "user1"; // 유저 아이디 임시로 저장
-=======
-  Future<void> loadUserId() async {
+  /* Future<void> loadUserId() async {
     userId = await saveId();
     // userId를 사용하여 추가 작업 수행
     print('User ID: $userId');
-  }
->>>>>>> Stashed changes
+  } */
+
+
 
   Future<void> loadPosts() async {
-    final url = Uri.parse('http://172.24.4.212:8080/load/posts/home');
+    final url = Uri.parse('http://192.168.116.212:8080/load/posts/home');
     try {
       final response = await http.post(
         url,
@@ -56,7 +48,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadProfile() async {
 
-    final url = Uri.parse('http://172.24.4.212:8080/load/userInfo');
+    final url = Uri.parse('http://192.168.116.212:8080/load/userInfo');
     try {
       final response = await http.post(
         url,
@@ -82,7 +74,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     loadPosts(); // 페이지가 생성될 때 데이터 로드
     loadProfile();
-    loadUserId();
+    // loadUserId();
   }
 
   @override

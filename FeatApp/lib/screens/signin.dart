@@ -48,7 +48,7 @@ class _LoginState extends State<Login> {
 
     // post 요청 보내기
     final http.Response response = await http.post(
-      Uri.parse('http://172.24.4.212:8080/login'),
+      Uri.parse('http://192.168.116.212:8080/login'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

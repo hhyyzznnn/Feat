@@ -1,11 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'ootd.dart';
 import 'package:feat/utils/appbar.dart';
-<<<<<<< Updated upstream
-=======
 import 'package:http/http.dart' as http;
-import 'package:feat/utils/saveId.dart';
->>>>>>> Stashed changes
 
 class CalenderPage extends StatelessWidget {
   CalenderPage({super.key});
@@ -22,42 +19,29 @@ class CalenderPage extends StatelessWidget {
 
 class CalenderDate extends StatefulWidget {
   CalenderDate({super.key, this.day, this.year, this.month});
-
   final now = DateTime.now;
   var day;
   var year;
   var month;
 
-<<<<<<< Updated upstream
-  dayModify(day) {
-    if ((day ~/ 10) < 1) {
-      return '0$day';
-    } else {
-      return day.toString();
-=======
   @override
   State<CalenderDate> createState() => _CalenderDateState();
 }
 
 class _CalenderDateState extends State<CalenderDate> {
-  List<String?> specialDates = [];
-  String? userId;
+  List<String?> specialDates = ["2024-09-27", "2024-09-23"];
 
-  Future<void> loadUserId() async {
-    userId = await saveId();
-    // userId를 사용하여 추가 작업 수행
-    print('User ID: $userId');
-  }
+  final String userId = "user1";
 
   @override
   void initState() {
     super.initState();
     loadDates();
-    loadUserId();
   }
 
+
   Future<void> loadDates() async {
-    final url = Uri.parse('http://172.24.4.212:8080/load/dates');
+    final url = Uri.parse('http://192.168.116.212:8080/load/dates');
     try {
       final response = await http.post(
         url,
@@ -67,7 +51,8 @@ class _CalenderDateState extends State<CalenderDate> {
 
       if (response.statusCode == 200) {
         setState(() {
-          specialDates = List<String?>.from(jsonDecode(response.body));
+          specialDates = List<String?>.from(
+              jsonDecode(response.body));
           print(specialDates);
         });
       } else {
@@ -75,40 +60,26 @@ class _CalenderDateState extends State<CalenderDate> {
       }
     } catch (e) {
       print('Error: $e');
->>>>>>> Stashed changes
     }
   }
 
-  monthModify(month) {
-    if ((month ~/ 10) < 1) {
-      return '0$month';
-    } else {
-      return month.toString();
-    }
+  String dayModify(int? day) {
+    return day != null && day < 10 ? '0$day' : day.toString();
   }
 
-  yearModify(year) {
-    return year.toString();
+  String monthModify(int? month) {
+    return month != null && month < 10 ? '0$month' : month.toString();
   }
 
-<<<<<<< Updated upstream
-  @override
-  State<CalenderDate> createState() => _CalenderDate();
-}
-=======
   String yearModify(int? year) {
     return year?.toString() ?? '';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    String formattedDate =
-        '${yearModify(widget.year)}-${monthModify(widget.month)}-${dayModify(widget.day)}';
->>>>>>> Stashed changes
 
-class _CalenderDate extends State<CalenderDate> {
   @override
   Widget build(BuildContext context) {
+    String formattedDate = '${yearModify(widget.year)}-${monthModify(widget.month)}-${dayModify(widget.day)}';
+
     if (widget.day == 0) {
       return Container(
           width: 50,
@@ -116,21 +87,13 @@ class _CalenderDate extends State<CalenderDate> {
           margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20), color: Colors.white));
-    } else {
+    } else if (widget.day != 0 && specialDates.contains(formattedDate)) {
       return GestureDetector(
         onTap: () {
           Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (context) => ootdHomePage(
-<<<<<<< Updated upstream
-                      year: widget.yearModify(widget.year),
-                      month: widget.monthModify(widget.month),
-                      day: widget.dayModify(widget.day))));
-          print(widget.yearModify(widget.year) +
-              widget.monthModify(widget.month) +
-              widget.dayModify(widget.day));
-=======
                       year: yearModify(widget.year),
                       month: monthModify(widget.month),
                       day: dayModify(widget.day))));
@@ -143,15 +106,15 @@ class _CalenderDate extends State<CalenderDate> {
             height: 50,
             margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Color(0xFFFC4318).withOpacity(0.5)),
+                borderRadius: BorderRadius.circular(20), color: Color(0xFFFC4318).withOpacity(0.5)),
             child: Align(
                 alignment: Alignment.center,
                 child: Text(widget.day.toString(),
                     style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.w500)))),
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.w500)))),
       );
-    } else {
+    }
+    else {
       return GestureDetector(
         onTap: () {
           Navigator.push(
@@ -164,7 +127,6 @@ class _CalenderDate extends State<CalenderDate> {
           print(yearModify(widget.year) +
               monthModify(widget.month) +
               dayModify(widget.day));
->>>>>>> Stashed changes
         },
         child: Container(
             width: 50,
@@ -176,7 +138,7 @@ class _CalenderDate extends State<CalenderDate> {
                 alignment: Alignment.center,
                 child: Text(widget.day.toString(),
                     style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.w500)))),
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.w500)))),
       );
     }
   }
@@ -255,7 +217,7 @@ class _CalenderHomePageState extends State<CalenderHomePage> {
                   child: Text(
                       '${yearAndMonth(index, widget.startYear, widget.startMonth)[0]}__${yearAndMonth(index, widget.startYear, widget.startMonth)[1]}',
                       style:
-                          TextStyle(fontSize: 25, fontWeight: FontWeight.w600)),
+                      TextStyle(fontSize: 25, fontWeight: FontWeight.w600)),
                 )),
             SizedBox(width: 450, height: 70, child: CalendarBar()),
             SizedBox(
@@ -381,7 +343,7 @@ class CalendarBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
       child: GridView.builder(
         gridDelegate:
-            SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
+        SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
         itemCount: 7,
         itemBuilder: (context, index) {
           return Container(

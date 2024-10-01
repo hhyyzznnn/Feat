@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 PODS:
   - audioplayers_darwin (0.0.1):
     - Flutter
@@ -72,4 +70,3 @@ SPEC CHECKSUMS:
 PODFILE CHECKSUM: 6e700dec67e6deac9b1c69bb14c49a2217a12d15
 
 COCOAPODS: 1.15.2
->>>>>>> Stashed changes
