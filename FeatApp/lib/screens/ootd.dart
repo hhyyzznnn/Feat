@@ -1,7 +1,7 @@
-import 'package:feat/utils/saveId.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ootdHomePage extends StatefulWidget {
   ootdHomePage({super.key, this.year, this.month, this.day});
@@ -21,9 +21,14 @@ class _ootdHomePageState extends State<ootdHomePage> {
   String? userId;
 
   Future<void> loadUserId() async {
-    userId = await saveId();
-    // userId를 사용하여 추가 작업 수행
-    print('User ID: $userId');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
+
+    if (userId != null) {
+      print('User ID: $userId');
+    } else {
+      print('User ID not found');
+    }
   }
 
   String formattedDate() {

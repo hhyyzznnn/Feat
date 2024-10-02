@@ -7,11 +7,11 @@ PreferredSizeWidget buildAppBar(BuildContext context, String pageTitle) {
 
   return AppBar(
     scrolledUnderElevation: 0,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.black,
     leading: IconButton(padding: EdgeInsets.zero, constraints: BoxConstraints(), onPressed: (){
       Navigator.pop(context);
-    }, icon: Icon(Icons.arrow_back, size: size.width * 0.075), color: Colors.black),
-    title: Text(pageTitle, style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * 0.065)),
+    }, icon: Icon(Icons.arrow_back, size: size.width * 0.075), color: Colors.white),
+    title: Text(pageTitle, style: TextStyle(fontWeight: FontWeight.bold, fontSize: size.width * 0.065, color: Colors.white)),
     centerTitle: false,
   );
 }

@@ -11,7 +11,19 @@ class MusicRecPage extends StatefulWidget {
 }
 
 class _MusicRecPageState extends State<MusicRecPage> {
-  final List<String> musicList = ['Song_1', 'Song_2', 'Song_3', 'Song_4', 'Song_5']; // 서버 연결 후 삭제 예정
+  final List<String> musicList = [
+    'Song_1',
+    'Song_2',
+    'Song_3',
+    'Song_4',
+    'Song_5'
+  ]; // 서버 연결 후 삭제 예정
+  final List<String> url = [
+    'https://www.youtube.com/watch?v=ojQoCfTRTkw',
+    'https://www.youtube.com/watch?v=08h8u8Z9iJQ',
+    'https://www.youtube.com/watch?v=3ERtNZqh1XA',
+  ]; // YouTube 영상 URL
+
   late AudioPlayer audioPlayer;
   int currentSongIndex = 0;
   bool isPlaying = false;
@@ -40,8 +52,8 @@ class _MusicRecPageState extends State<MusicRecPage> {
   }
 
   void _playMusic() async {
-    // String url = 'https://example.com/${musicList[currentSongIndex]}.mp3'; // 각 곡의 URL로 수정
-    await audioPlayer.play(AssetSource('sample.mp3'));
+    //String url = 'https://example.com/${musicList[currentSongIndex]}.mp3'; // 각 곡의 URL로 수정
+    await audioPlayer.play(UrlSource(url[0]));
     await audioPlayer.setVolume(volume);
     setState(() {
       isPlaying = true;
@@ -141,9 +153,13 @@ class _MusicRecPageState extends State<MusicRecPage> {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: '${musicList[currentSongIndex]}\n',
-                          style: TextStyle(color: Colors.black, fontSize: 22, fontFamily: 'Inter', fontWeight: FontWeight.w600, height: 1.5)
-                        ),
+                            text: '${musicList[currentSongIndex]}\n',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 22,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w600,
+                                height: 1.5)),
                         TextSpan(
                           text: 'Artist Name',
                           style: TextStyle(
@@ -241,9 +257,11 @@ class _MusicRecPageState extends State<MusicRecPage> {
                   onHorizontalDragUpdate: (details) {
                     setState(() {
                       double newPosition =
-                      (details.localPosition.dx / (size.width * 0.9)).clamp(0.0, 1.0);
+                          (details.localPosition.dx / (size.width * 0.9))
+                              .clamp(0.0, 1.0);
                       currentDuration = Duration(
-                          seconds: (newPosition * totalDuration.inSeconds).toInt());
+                          seconds:
+                              (newPosition * totalDuration.inSeconds).toInt());
                       audioPlayer.seek(currentDuration);
                     });
                   },
@@ -259,7 +277,9 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       ),
                       Positioned(
                         left: 0,
-                        right: (1 - currentDuration.inSeconds / totalDuration.inSeconds) *
+                        right: (1 -
+                                currentDuration.inSeconds /
+                                    totalDuration.inSeconds) *
                             size.width *
                             0.9,
                         child: Container(

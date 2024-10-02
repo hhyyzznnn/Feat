@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:feat/utils/saveId.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,16 +12,27 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<String?> homePosts = []; // 이미지 URL을 저장할 리스트
-  Map ProfileImage = {}; // 유저 정보를 저장할 맵
-  final String userId = "user1";
+  Map ProfileImage = {}; // 프로필 사진을 저장할 맵
+  String? userId;
 
-  /* Future<void> loadUserId() async {
-    userId = await saveId();
-    // userId를 사용하여 추가 작업 수행
-    print('User ID: $userId');
-  } */
+  @override
+  void initState() {
+    super.initState();
+    loadUserId();
+  }
 
+  Future<void> loadUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
 
+    if (userId != null) {
+      print('User ID: $userId');
+      await loadPosts();
+      await loadProfile();
+    } else {
+      print('User ID not found');
+    }
+  }
 
   Future<void> loadPosts() async {
     final url = Uri.parse('http://192.168.116.212:8080/load/posts/home');
@@ -44,10 +55,9 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print('Error: $e');
     }
-  }
+  } // 이미지 불러오는 함수
 
   Future<void> loadProfile() async {
-
     final url = Uri.parse('http://192.168.116.212:8080/load/userInfo');
     try {
       final response = await http.post(
@@ -58,7 +68,8 @@ class _HomePageState extends State<HomePage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          ProfileImage = Map.from(jsonDecode(response.body)); // JSON 데이터를 리스트로 변환
+          ProfileImage =
+              Map.from(jsonDecode(response.body)); // JSON 데이터를 리스트로 변환
           print(ProfileImage);
         });
       } else {
@@ -70,15 +81,7 @@ class _HomePageState extends State<HomePage> {
   } // 프로필 사진 불러오는 함수 (서버)
 
   @override
-  void initState() {
-    super.initState();
-    loadPosts(); // 페이지가 생성될 때 데이터 로드
-    loadProfile();
-    // loadUserId();
-  }
-
-  @override
-  Widget build(BuildContext context)  {
+  Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -86,12 +89,29 @@ class _HomePageState extends State<HomePage> {
         preferredSize: Size.fromHeight(size.height * 0.05),
         child: AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: Colors.white,
-          title: Text('Feat.',
-              style: TextStyle(
-                  fontSize: size.height * 0.04,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xff3F3F3F))),
+          backgroundColor: Colors.black,
+          title: RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: ' Feat',
+                  style: TextStyle(
+                    fontSize: size.height * 0.04,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                TextSpan(
+                  text: '.',
+                  style: TextStyle(
+                    fontSize: size.height * 0.04,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFC4318), // 원하는 색상으로 변경
+                  ),
+                ),
+              ],
+            ),
+          ),
           actions: [
             Padding(
               padding: EdgeInsets.symmetric(horizontal: size.width * 0.025),
@@ -101,33 +121,32 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () {
                   Navigator.pushNamed(context, 'alarm');
                 },
-                icon: Icon(Icons.notifications_none, size: size.height * 0.035),
-                color: Color(0xff3F3F3F),
+                icon: Icon(Icons.notifications_none, size: size.height * 0.04),
+                color: Colors.white,
               ),
             ),
             Padding(
-              padding: EdgeInsets.only(right: size.width * 0.025),
+              padding: EdgeInsets.only(right: size.width * 0.03),
               child: InkWell(
                 onTap: () {
                   Navigator.pushNamed(context, 'profile');
                 },
                 borderRadius: BorderRadius.circular(size.height * 0.03),
                 child: Container(
-                  height: size.height * 0.045,  // 원형을 위한 height
-                  width: size.height * 0.045,   // height와 동일한 width로 설정
+                  height: size.height * 0.045, // 원형을 위한 height
+                  width: size.height * 0.045, // height와 동일한 width로 설정
                   decoration: const BoxDecoration(
-                    shape: BoxShape.circle,  // 원형을 보장
+                    shape: BoxShape.circle, // 원형을 보장
                   ),
                   child: ClipOval(
-                    child: ProfileImage['profile'] != null && ProfileImage['profile'].isNotEmpty
+                    child: ProfileImage['profile'] != null &&
+                            ProfileImage['profile'].isNotEmpty
                         ? Image.network(
-                      ProfileImage['profile'],
-                      fit: BoxFit.cover,
-                    )
-                        : Icon(
-                      Icons.person,
-                      size: size.height * 0.035,
-                    ),
+                            ProfileImage['profile'],
+                            fit: BoxFit.cover,
+                          )
+                        : Icon(Icons.person,
+                            size: size.height * 0.04, color: Colors.white),
                   ),
                 ),
               ),
@@ -136,37 +155,40 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       body: ColoredBox(
-        color: Colors.white,
+        color: Colors.black,
         child: Column(
           children: [
             Container(
-              margin: EdgeInsets.all(size.width * 0.03),
+              margin: EdgeInsets.all(size.width * 0.035),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Music Name',
+                  Text(' Music Name',
                       style: TextStyle(
                           fontSize: size.width * 0.04,
-                          height: size.height * 0.0035)),
+                          height: size.height * 0.0035,
+                          color: Color(0xFFFC4318))),
                   Stack(
                     alignment: Alignment.center,
                     children: [
                       Container(
-                          height: size.height * 0.06,
+                          height: size.height * 0.065,
                           decoration: BoxDecoration(
                             borderRadius:
-                            BorderRadius.circular(size.width * 0.03), color: Color(0xff3f3f3f),
+                                BorderRadius.circular(size.width * 0.03),
+                            border: Border.all(width: 1, color: Colors.white),
+                            color: Colors.black,
                             boxShadow: [
                               BoxShadow(
                                   color: Color(0xff000000).withOpacity(0.25),
                                   spreadRadius: 0,
                                   blurRadius: 4,
-                                  offset: Offset(0, 4) // changes position of shadow
-                              ),
+                                  offset:
+                                      Offset(0, 4) // changes position of shadow
+                                  ),
                             ],
-                          )
-                      ),
-                      Center(child: Text('SoundWave'))
+                          )),
+                      Center(child: Text('SoundWave')) // _Musicvisualizer()
                     ],
                   )
                 ],
@@ -180,7 +202,7 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, index) {
                   final imageUrl = homePosts[index];
                   return Container(
-                    margin: EdgeInsets.only(left: 15,right: 30), // 좌우 여백 설정
+                    margin: EdgeInsets.only(left: 15, right: 30), // 좌우 여백 설정
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10), // 모서리를 둥글게 설정
                       boxShadow: [
@@ -192,41 +214,43 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-                    child: ClipRRect(  // 경계에 맞게 자르기
+                    child: ClipRRect(
+                      // 경계에 맞게 자르기
                       borderRadius: BorderRadius.circular(10),
                       child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: imageUrl != null
-                            ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                        )
-                            : Center(child: Text('No Image'))
-                      ),
+                          aspectRatio: 16 / 9,
+                          child: imageUrl != null
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                )
+                              : Center(child: Text('No Image'))),
                     ),
                   );
                 },
               ),
             ),
+            SizedBox(height: 10),
             Stack(
               alignment: Alignment.center,
               children: [
                 Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30.0),
-                      color: Color(0xff3f3f3f),
+                      border: Border.all(
+                          width: size.width * 0.005, color: Colors.black),
+                      borderRadius: BorderRadius.circular(40.0),
+                      color: Colors.black,
                       boxShadow: [
                         BoxShadow(
-                            color: Color(0xff000000).withOpacity(0.25),
+                            color: Colors.black.withOpacity(0.25),
                             spreadRadius: 0,
                             blurRadius: 4,
-                            offset: Offset(0, 4) // changes position of shadow
-                        ),
+                            offset: Offset(4, 4)),
                       ],
                     ),
                     margin: EdgeInsets.all(size.width * 0.05),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         IconButton(
                             onPressed: () {
@@ -235,7 +259,7 @@ class _HomePageState extends State<HomePage> {
                             icon: Icon(Icons.date_range, color: Colors.white)),
                         SizedBox(
                           width: size.width * 0.2,
-                          height: size.height * 0.075,
+                          height: size.height * 0.05,
                         ),
                         IconButton(
                             onPressed: () {
@@ -247,14 +271,14 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(30.0),
-                    color: Color(0xff3f3f3f),
+                    color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                          color: Color(0xff000000).withOpacity(0.25),
+                          color: Colors.white.withOpacity(0.25),
                           spreadRadius: 0,
                           blurRadius: 4,
                           offset: Offset(0, 4) // changes position of shadow
-                      ),
+                          ),
                     ],
                   ),
                 ),
@@ -263,24 +287,24 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, 'camera');
                   },
                   child: Container(
-                    width: size.width * 0.275,
-                    height: size.width * 0.275,
-                    decoration: BoxDecoration(
-                      color: Color(0xff3f3f3f),
-                      borderRadius: BorderRadius.circular(9999),
-                      border: Border.all(width: size.width * 0.015, color: Colors.white),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Color(0xff000000).withOpacity(0.25),
-                            spreadRadius: 0,
-                            blurRadius: 4,
-                            offset: Offset(0, 4) // changes position of shadow
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.add,
-                        color: Colors.white, size: size.width * 0.12)
-                  ),
+                      width: size.width * 0.225,
+                      height: size.width * 0.225,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFC4318),
+                        borderRadius: BorderRadius.circular(9999),
+                        border: Border.all(
+                            width: size.width * 0.005, color: Colors.black),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Color(0xff000000).withOpacity(0.25),
+                              spreadRadius: 0,
+                              blurRadius: 4,
+                              offset: Offset(0, 4) // changes position of shadow
+                              ),
+                        ],
+                      ),
+                      child: Icon(Icons.add,
+                          color: Colors.black, size: size.width * 0.12)),
                 )
               ],
             )
@@ -291,74 +315,133 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-
 /*
-class SoundWaveform extends StatefulWidget {
+class _Musicvisualizer extends StatelessWidget {
+  List<int> duration = [
+    1000,
+    2000,
+    1500,
+    2500,
+    3000,
+    2000,
+    1500,
+    2500,
+    1000,
+    500,
+    1200,
+    1800,
+    2200,
+    3000,
+    1700,
+    1100,
+    2400,
+    2900,
+    1000,
+    500
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: new List<Widget>.generate(20, (index) {
+        // 인접한 막대기들의 duration 차이를 줄여 자연스럽게 연결되도록 조정
+        int adjustedDuration =
+            (duration[index % 20] + duration[(index + 1) % 20]) ~/ 2;
+        return VisualComponent(duration: adjustedDuration);
+      }),
+    );
+  }
+}
+
+class VisualComponent extends StatefulWidget {
+  const VisualComponent({super.key, required this.duration});
+
+  final int duration;
+
+  @override
+  State<VisualComponent> createState() => _VisualComponentState();
+}
+
+class _VisualComponentState extends State<VisualComponent>
+    with SingleTickerProviderStateMixin {
+  late Animation<double> animation;
+  late AnimationController animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    animationController = AnimationController(
+        duration: Duration(milliseconds: widget.duration), vsync: this);
+    final curvedAnimation =
+        CurvedAnimation(parent: animationController, curve: Curves.bounceIn);
+
+    animation = Tween<double>(begin: 5, end: 27.5).animate(curvedAnimation)
+      ..addListener(() {
+        setState(() {});
+      });
+    animationController.repeat(reverse: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        margin: EdgeInsets.only(right: 5),
+        width: 4.5,
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(5)),
+        height: animation.value);
+  }
+}
+*/
+
+/*class SoundWaveform extends StatefulWidget {
   const SoundWaveform({super.key});
 
   @override
   State<SoundWaveform> createState() => _SoundWaveformState();
 }
 
-class _SoundWaveformState extends State<SoundWaveform> with TickerProviderStateMixin {
+class _SoundWaveformState extends State<SoundWaveform>
+    with TickerProviderStateMixin {
   late AnimationController controller;
-  final int count = 30; // Number of bars
-  final double minHeight = 10.0; // Minimum bar height
-  final double maxHeight = 50.0; // Maximum bar height
-  List<double> amplitudes = List.filled(30, 10.0); // Initial waveform heights
-  AudioPlayer _audioPlayer = AudioPlayer();
-  Random random = Random();
-  bool isPlaying = false;
+  final List<double> amplitudes = [
+    10.0,
+    20.0,
+    15.0,
+    25.0,
+    30.0,
+    20.0,
+    15.0,
+    25.0,
+    10.0,
+    5.0,
+    12.0,
+    18.0,
+    22.0,
+    30.0,
+    17.0,
+    11.0,
+    24.0,
+    29.0,
+    10.0,
+    5.0
+  ];
+  final int count = 20;
 
   @override
   void initState() {
     super.initState();
     controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000), // Animation speed
+      duration: const Duration(milliseconds: 500),
     )..repeat();
-
-    startAudio(); // Start audio playback
   }
 
   @override
   void dispose() {
     controller.dispose();
-    _audioPlayer.dispose(); // Dispose of audio player resources
     super.dispose();
-  }
-
-  // Start audio playback and visualization
-  Future<void> startAudio() async {
-    // Set the audio player mode to low latency for quick start and stop
-    await _audioPlayer.setReleaseMode(ReleaseMode.stop);
-
-    // Start playing the audio file from assets
-    int result = await _audioPlayer.play('assets/your_audio_file.mp3', isLocal: true);
-
-    if (result == 1) {
-      setState(() {
-        isPlaying = true;
-      });
-    }
-
-    // Listen to the audio player's position stream to update the waveform
-    _audioPlayer.onAudioPositionChanged.listen((duration) {
-      if (isPlaying) {
-        setState(() {
-          // Randomly update bar heights
-          amplitudes = List.generate(count, (i) => minHeight + random.nextDouble() * (maxHeight - minHeight));
-        });
-      }
-    });
-
-    // Handle when the audio is finished playing
-    _audioPlayer.onPlayerCompletion.listen((_) {
-      setState(() {
-        isPlaying = false;
-        _audioPlayer.stop();
-      });
-    });
   }
 
   @override
@@ -369,14 +452,17 @@ class _SoundWaveformState extends State<SoundWaveform> with TickerProviderStateM
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(count, (i) {
-            double height = amplitudes[i]; // Set random height
+            double height = amplitudes[i];
             return AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
-              margin: i == (count - 1) ? EdgeInsets.zero : const EdgeInsets.only(right: 5),
+              duration: const Duration(milliseconds: 300),
+              margin: i == (count - 1)
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.only(right: 5),
               height: height,
-              width: 6, // Bar width
+              width: 6,
+              // Bar width
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6 + 0.4 * controller.value), // Change color dynamically
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(9999),
               ),
             );
@@ -385,4 +471,4 @@ class _SoundWaveformState extends State<SoundWaveform> with TickerProviderStateM
       },
     );
   }
-} */
+}*/

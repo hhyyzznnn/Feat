@@ -6,7 +6,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:intl/intl.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key, required this.camera});
@@ -23,14 +24,26 @@ class _CameraPageState extends State<CameraPage> {
   bool isFlashOn = false; // 후레쉬 상태
   bool isFrontCamera = false; // 현재 카메라 상태
   double _currentZoomLevel = 1.0; // 현재 줌 레벨
-  double _maxZoomLevel = 4.0; // 최대 줌 레벨, 카메라에 따라 조정 필요
-  double _zoomFactor = 0.05; // 줌 변경 감도
+  final double _maxZoomLevel = 4.0; // 최대 줌 레벨, 카메라에 따라 조정 필요
+  final double _zoomFactor = 0.05; // 줌 변경 감도
+  String? userId;
 
+  Future<void> loadUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
+
+    if (userId != null) {
+      print('User ID: $userId');
+    } else {
+      print('User ID not found');
+    }
+  }
 
   void initState() {
     super.initState();
     _controller = CameraController(widget.camera, ResolutionPreset.high);
-    _initializeControllerFuture = _controller.initialize(); // 카메라 컨트롤러 초기화
+    _initializeControllerFuture = _controller.initialize();
+    loadUserId();
   }
 
   Future<void> _initializeCamera(CameraDescription camera) async {
@@ -76,17 +89,30 @@ class _CameraPageState extends State<CameraPage> {
 
   Future<String> getUploadUrl(String userId, String fileName) async {
     String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // 파일 이름과 확장자를 분리
+    int extensionIndex = fileName.lastIndexOf('.');
+    String baseName = fileName.substring(0, extensionIndex);
+    String extension = fileName.substring(extensionIndex);
+
+    // 파일 이름에 유저 아이디와 날짜 추가
+    String modifiedFileName = '$baseName+_$today+_$userId$extension';
+
     final response = await http.post(
-        Uri.parse('http://192.168.116.212:8080/upload/post'),
-        headers: {'Content-Type': 'application/json'},
-        body: '{"userId": "$userId", "fileName": "$fileName", "date": "$today"}'
+      Uri.parse('http://192.168.116.212:8080/upload/post'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "userId": userId,
+        "fileName": modifiedFileName,
+        "date": today
+      }),
     );
 
     if (response.statusCode == 200) {
       return response.body;
     } else {
       throw Exception(
-          'Failed to upload file: ${response.reasonPhrase}'); // 예외 던지기
+          'Failed to upload file: ${response.reasonPhrase}');
     }
   }
 
@@ -190,13 +216,20 @@ class _CameraPageState extends State<CameraPage> {
 
                     if (!context.mounted) return;
 
+                    if (isFlashOn) {
+                      await _controller.setFlashMode(FlashMode.off);
+                      setState(() {
+                        isFlashOn = false;
+                      });
+                    }
+
                     // 업로드 URL을 가져온 후 이미지를 업로드
-                    String uploadUrl = await getUploadUrl('user1', 'image.jpg');
+                    String uploadUrl = await getUploadUrl(userId!, 'image.jpg');
                     await uploadImageToUrl(uploadUrl, imageFile);
 
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => PreviewPage(imagePath: image.path),
+                        builder: (context) => PreviewPage(imagePath: image.path, postUrl: uploadUrl),
                       ),
                     );
                   } catch (e) {

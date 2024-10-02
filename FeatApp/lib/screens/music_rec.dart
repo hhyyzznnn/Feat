@@ -1,87 +1,187 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:feat/utils/appbar.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class MusicRecPage extends StatefulWidget {
+  final List<String> youtubeList;
+
+  const MusicRecPage({super.key, required this.youtubeList});
+
   @override
-  _MusicRecPageState createState() => _MusicRecPageState();
+  State<MusicRecPage> createState() => _MusicRecPageState();
 }
 
 class _MusicRecPageState extends State<MusicRecPage> {
-  final List<String> musicList = ['Song_1', 'Song_2', 'Song_3', 'Song_4', 'Song_5']; // 서버 연결 후 삭제 예정
+  late List<String> musicList;
 
-  late AudioPlayer audioPlayer;
+  late YoutubePlayerController _controller;
   int currentSongIndex = 0;
   bool isPlaying = false;
-  double volume = 0.5;
   Duration currentDuration = Duration.zero;
   Duration totalDuration = Duration.zero;
+
+  List<String> videoTitles = [];
+
+  String? currentVideoTitle = '';
+  String? currentChannelTitle = '';
+
+  List<Map<String, String>> videoInfos = [];
+
+  Future<void> _initializePlayer() async {
+    _controller = YoutubePlayerController(
+      initialVideoId:
+          YoutubePlayer.convertUrlToId(musicList[currentSongIndex])!,
+      flags: const YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        hideControls: false,
+      ),
+    );
+
+    _controller.addListener(() {
+      // 현재 재생 상태(isPlaying)가 변경된 경우에만 상태 업데이트
+      if (_controller.value.isPlaying != isPlaying) {
+        setState(() {
+          isPlaying = _controller.value.isPlaying;
+        });
+      }
+
+      // 현재 재생 시간 및 총 재생 시간이 변경된 경우에만 상태 업데이트
+      if (_controller.value.position != currentDuration ||
+          _controller.metadata.duration != totalDuration) {
+        setState(() {
+          currentDuration =
+              Duration(seconds: _controller.value.position.inSeconds);
+          totalDuration =
+              Duration(seconds: _controller.metadata.duration.inSeconds);
+        });
+      }
+    });
+  }
+
+  Future<Map<String, String>> fetchVideoInfo(String videoId) async {
+    final apiKey = 'AIzaSyAOY3BhovlWuoDFvgMs-WajC2sJgVZMpkY';
+    final url =
+        'https://www.googleapis.com/youtube/v3/videos?id=$videoId&key=$apiKey&part=snippet';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['items'].isNotEmpty) {
+        final snippet = data['items'][0]['snippet'];
+        String fullTitle = snippet['title']; // 전체 제목
+
+        // '가수 이름 - 곡 제목' 형식에서 가수와 곡 제목 분리
+        String artistName = '';
+        String songTitle = '';
+
+        // 제목 형식이 '가수 이름 - 곡 제목'일 경우만 처리
+        if (fullTitle.contains(' - ')) {
+          List<String> titleParts = fullTitle.split(' - ');
+          artistName = titleParts[0]; // 가수 이름
+          songTitle = titleParts[1]; // 곡 제목
+
+          // 괄호 또는 대괄호로 감싸진 텍스트 제거
+          songTitle =
+              songTitle.replaceAll(RegExp(r'\s*\(.*?\)\s*|\s*\[.*?\]\s*'), '');
+        } else {
+          songTitle = fullTitle; // 형식이 맞지 않으면 전체를 곡 제목으로
+          // 괄호 또는 대괄호로 감싸진 텍스트 제거
+          songTitle =
+              songTitle.replaceAll(RegExp(r'\s*\(.*?\)\s*|\s*\[.*?\]\s*'), '');
+        }
+
+        return {
+          'title': songTitle,
+          'channelTitle': artistName, // 가수 이름
+        };
+      }
+    }
+    throw Exception('Failed to load video info');
+  }
 
   @override
   void initState() {
     super.initState();
-    audioPlayer = AudioPlayer();
-    audioPlayer.setVolume(volume);
-    _playMusic();
+    _initializeMusicList(); // 음악 리스트 초기화 함수 호출
+  }
 
-    audioPlayer.onPositionChanged.listen((Duration position) {
-      setState(() {
-        currentDuration = position;
-      });
+  Future<void> _initializeMusicList() async {
+    musicList = widget.youtubeList;
+
+    if (musicList.isNotEmpty) {
+      print('${musicList}');
+      await _initializePlayer(); // 플레이어 초기화
+      await _fetchAllVideoInfos(); // 비디오 정보 가져오기
+    }
+  }
+
+  Future<void> _fetchAllVideoInfos() async {
+    List<Map<String, String>> fetchedInfos = [];
+    for (String url in musicList) {
+      String videoId = YoutubePlayer.convertUrlToId(url)!;
+      try {
+        final videoInfo = await fetchVideoInfo(videoId);
+        fetchedInfos.add(videoInfo);
+      } catch (e) {
+        print('Error fetching video info: $e');
+      }
+    }
+    setState(() {
+      videoInfos = fetchedInfos;
     });
   }
 
   @override
   void dispose() {
-    audioPlayer.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  void _playMusic() async {
-    // String url = 'https://example.com/${musicList[currentSongIndex]}.mp3'; // 각 곡의 URL로 수정
-    await audioPlayer.play(AssetSource('sample.mp3'));
-    await audioPlayer.setVolume(volume);
-    setState(() {
-      isPlaying = true;
-      currentDuration = Duration.zero;
-
-      audioPlayer.getDuration().then((duration) {
-        setState(() {
-          totalDuration = duration ?? Duration.zero;
-        });
+  void _playMusic() {
+    String? videoId = YoutubePlayer.convertUrlToId(musicList[currentSongIndex]);
+    if (videoId != null) {
+      _controller.load(videoId);
+      setState(() {
+        isPlaying = true;
+        // 현재 비디오의 제목과 채널 이름 업데이트
       });
-    });
+    } else {
+      print('Invalid video URL');
+    }
   }
 
   void _pauseMusic() {
-    audioPlayer.pause();
+    _controller.pause();
     setState(() {
       isPlaying = false;
     });
   }
 
   void _resumeMusic() {
-    audioPlayer.resume();
+    _controller.play();
     setState(() {
       isPlaying = true;
     });
   }
 
-  void _rewindMusic() {
+  void _previousMusic() {
     setState(() {
       if (currentSongIndex > 0) {
         currentSongIndex--;
-        _playMusic(); // 이전 곡 재생
+        _playMusic();
       }
     });
   }
 
-  void _fastForwardMusic() {
+  void _nextMusic() {
     setState(() {
       if (currentSongIndex < musicList.length - 1) {
         currentSongIndex++;
-        _playMusic(); // 다음 곡 재생
+        _playMusic();
       }
     });
   }
@@ -93,122 +193,49 @@ class _MusicRecPageState extends State<MusicRecPage> {
     return "$twoDigitMinutes:$twoDigitSeconds";
   }
 
+  Future<String> fetchVideoTitle(String videoId) async {
+    final apiKey = 'AIzaSyAOY3BhovlWuoDFvgMs-WajC2sJgVZMpkY';
+    final url =
+        'https://www.googleapis.com/youtube/v3/videos?id=$videoId&key=$apiKey&part=snippet';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['items'].isNotEmpty) {
+        return data['items'][0]['snippet']['title']; // 영상 제목 반환
+      }
+    }
+    throw Exception('Failed to load video title');
+  }
+
+  String getThumbnailUrl(String videoId) {
+    return 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
     return Scaffold(
       appBar: buildAppBar(context, ''),
-      body: Stack(
-        children: [
-          Align(
-            alignment: Alignment(0, 0.65),
-            child: SizedBox(
-              width: size.width * 0.85,
-              height: size.height * 0.13,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: SvgPicture.asset('assets/icons/rewind.svg'),
-                    onPressed: _rewindMusic,
-                  ),
-                  // 정지 버튼
-                  IconButton(
-                    icon: isPlaying
-                        ? SvgPicture.asset('assets/icons/pause.svg')
-                        : Icon(Icons.play_arrow, size: 60),
-                    onPressed: isPlaying ? _pauseMusic : _resumeMusic,
-                  ),
-                  IconButton(
-                    icon: SvgPicture.asset('assets/icons/fast_forward.svg'),
-                    onPressed: _fastForwardMusic,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // 음악 볼륨 조정
-          Align(
-            alignment: Alignment(0, 0.8),
-            child: SizedBox(
-              width: size.width * 0.9,
-              height: size.height * 0.05,
-              child: Row(
-                children: [
-                  // volume down 버튼
-                  IconButton(
-                    icon: SvgPicture.asset('assets/icons/volume_down.svg'),
-                    onPressed: () {
-                      setState(() {
-                        if (volume > 0) {
-                          volume = (volume - 0.1).clamp(0.0, 1.0); // 볼륨 감소
-                          audioPlayer.setVolume(volume); // 볼륨 설정
-                        }
-                      });
-                    },
-                  ),
-                  // volume 조정 영역
-                  GestureDetector(
-                    onHorizontalDragUpdate: (details) {
-                      setState(() {
-                        // 드래그의 위치를 비율로 계산하여 볼륨 조정
-                        double newVolume =
-                            (details.localPosition.dx / (size.width * 0.66))
-                                .clamp(0.0, 1.0);
-                        volume = newVolume;
-                        audioPlayer.setVolume(volume);
-                      });
-                    },
-                    child: Container(
-                      width: size.width * 0.66,
-                      height: size.height * 0.011,
-                      decoration: BoxDecoration(
-                        color: Color(0xffD9D9D9),
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Stack(
-                        children: [
-                          // 현재 볼륨에 따라 색상 변화
-                          Positioned(
-                            left: 0,
-                            right: (1 - volume) * size.width * 0.66,
-                            child: Container(
-                              height: size.height * 0.011,
-                              decoration: BoxDecoration(
-                                color: Color(0xff3F3F3F), // 볼륨이 증가할 때 색상
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // volume up 버튼
-                  IconButton(
-                    icon: SvgPicture.asset('assets/icons/volume_up.svg'),
-                    onPressed: () {
-                      setState(() {
-                        if (volume < 1.0) {
-                          volume = (volume + 0.1).clamp(0.0, 1.0); // 볼륨 증가
-                          audioPlayer.setVolume(volume); // 볼륨 설정
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Main music
-          Align(
-            alignment: Alignment(0, -0.9),
-            child: Container(
-              width: size.width * 0.9,
-              height: size.height * 0.1, // 메인 음악 컨테이너 크기 조정
+      body: Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+          colors: [
+            Colors.black,
+            Color(0xFF3F3F3F), // 끝 색상 (예: 살구색)
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        )),
+        child: Column(
+          children: [
+            Container(
+              margin: EdgeInsets.only(bottom: 5),
+              width: size.width * 0.875,
+              height: size.height * 0.1,
               decoration: ShapeDecoration(
-                color: Color(0xFFF0EADF),
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -223,18 +250,17 @@ class _MusicRecPageState extends State<MusicRecPage> {
               ),
               child: Row(
                 children: [
-                  // 앨범 커버 이미지
                   Container(
-                    width: size.width * 0.16,
-                    height: size.width * 0.16,
-                    margin: EdgeInsets.only(left: 16, right: 24),
+                    width: size.width * 0.175,
+                    height: size.width * 0.175,
+                    margin: EdgeInsets.only(left: 12.5, right: 25),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       color: Colors.grey,
                       image: DecorationImage(
-                        image: NetworkImage(
-                          'https://example.com/album_cover_${musicList[currentSongIndex]}.jpg',
-                        ), // 현재 재생 중인 곡의 앨범 커버 이미지 URL
+                        image: NetworkImage(getThumbnailUrl(
+                            YoutubePlayer.convertUrlToId(
+                                musicList[currentSongIndex])!)),
                         fit: BoxFit.cover, // 이미지를 맞춤 설정
                       ),
                     ),
@@ -244,23 +270,20 @@ class _MusicRecPageState extends State<MusicRecPage> {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '${musicList[currentSongIndex]}\n',
-                            // 메인 음악 제목
-                            style: TextStyle(
-                              color: Colors.black,
-                              // 메인 음악 텍스트 색상 조정
-                              fontSize: 22,
-                              // 메인 음악 타이틀의 글자 크기
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w600,
-                              height: 1.4,
-                            ),
-                          ),
+                              text:
+                                  '${videoInfos.isNotEmpty ? videoInfos[currentSongIndex]['title'] : 'Loading...'}\n',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 22,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.5)),
                           TextSpan(
-                            text: 'Artist Name', // 추가 정보 (예: 아티스트 이름)
+                            text: videoInfos.isNotEmpty
+                                ? videoInfos[currentSongIndex]['channelTitle']
+                                : 'Artist Name',
                             style: TextStyle(
                               color: Colors.black,
-                              // 서브 텍스트 색상
                               fontSize: 18,
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w400,
@@ -274,25 +297,35 @@ class _MusicRecPageState extends State<MusicRecPage> {
                 ],
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment(0, -0.61),
-            child: Container(
-              width: size.width * 0.9,
-              height: size.height * 0.001,
-              color: Color(0xFFc7c7c7),
+            Divider(
+              indent: 20,
+              endIndent: 20,
+              height: 30,
             ),
-          ),
-          // music list
-          Align(
-            alignment: Alignment(0, -0.3),
-            child: SizedBox(
-              width: size.width * 0.88,
-              height: size.height * 0.4,
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              width: 0,
+              height: 0,
+              color: Colors.black,
+              child: YoutubePlayer(
+                controller: _controller,
+                showVideoProgressIndicator: true,
+                progressIndicatorColor: Colors.amber,
+                onReady: () {},
+              ),
+            ),
+            SizedBox(
+              width: size.width * 0.875,
+              height: size.height * 0.425,
               child: ListView.builder(
                 itemCount: musicList.length,
                 itemBuilder: (context, index) {
+                  String videoId =
+                      YoutubePlayer.convertUrlToId(musicList[index])!;
                   return Container(
+                    width: size.width * 0.9,
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     padding: const EdgeInsets.all(13),
                     decoration: ShapeDecoration(
@@ -311,35 +344,48 @@ class _MusicRecPageState extends State<MusicRecPage> {
                     ),
                     child: Row(
                       children: [
-                        // 앨범 커버 이미지
-                        Container(
-                          width: size.width * 0.12,
-                          height: size.width * 0.12,
-                          margin: EdgeInsets.only(right: 32), // 텍스트와 간격 조정
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey,
+                        ClipRect(
+                          child: Align(
+                            alignment: Alignment.center,
+                            widthFactor: 0.79,
+                            heightFactor: 0.79,
+                            child: Container(
+                              width: size.width * 0.225,
+                              height: size.width * 0.225,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: NetworkImage(getThumbnailUrl(videoId)),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
+                        SizedBox(width: 25),
                         Expanded(
                           child: Text.rich(
                             TextSpan(
                               children: [
                                 TextSpan(
-                                  text: '${musicList[index]}\n', // 음악 제목
+                                  text:
+                                      '${videoInfos.isNotEmpty ? videoInfos[index]['title'] : 'Loading...'}\n', // 여기서 index를 사용
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 20,
+                                    fontSize: 22,
                                     fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.2,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.5,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '000',
+                                  text: videoInfos.isNotEmpty
+                                      ? videoInfos[index]
+                                          ['channelTitle'] // 여기서 index를 사용
+                                      : 'Artist Name',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontFamily: 'Inter',
                                     fontWeight: FontWeight.w400,
                                     height: 1.2,
@@ -355,103 +401,96 @@ class _MusicRecPageState extends State<MusicRecPage> {
                 },
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment(0, 0.27),
-            child: Container(
+            SizedBox(height: 20),
+            SizedBox(
               width: size.width * 0.9,
-              height: size.height * 0.001,
-              color: Color(0xFFc7c7c7),
-            ),
-          ),
-          Align(
-            alignment: Alignment(0, 0.45),
-            child: SizedBox(
-              width: size.width * 0.9,
-              height: size.height * 0.04,
-              child: Stack(
+              height: size.height * 0.05,
+              child: Column(
                 children: [
-                  // music box
-                  Align(
-                    alignment: Alignment(0, -1),
-                    child: Container(
-                      width: size.width * 0.9,
-                      height: size.height * 0.011,
-                      decoration: BoxDecoration(
-                        color: Color(0xffD9D9D9),
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: GestureDetector(
-                        onHorizontalDragUpdate: (details) {
-                          setState(() {
-                            // 배경 Container 안에서만 슬라이드 계산
-                            double newPosition =
-                                (details.localPosition.dx / (size.width * 0.9))
-                                    .clamp(0.0, 1.0); // 범위를 0.0 ~ 1.0 사이로 제한
-                            currentDuration = Duration(
-                                seconds: (newPosition * totalDuration.inSeconds)
-                                    .toInt());
-                            audioPlayer.seek(currentDuration); // 새로운 재생 시간으로 이동
-                          });
-                        },
-                        child: Stack(
-                          children: [
-                            // 현재 재생된 부분을 색상으로 표시
-                            Positioned(
-                              left: 0,
-                              right: (1 -
-                                      currentDuration.inSeconds /
-                                          totalDuration.inSeconds) *
-                                  size.width *
-                                  0.9,
-                              child: Container(
-                                height: size.height * 0.011, // 재생된 부분의 높이
-                                decoration: BoxDecoration(
-                                  color: Color(0xff3F3F3F), // 현재 재생된 부분의 색상
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                              ),
-                            ),
-                          ],
+                  GestureDetector(
+                    onHorizontalDragUpdate: (details) {
+                      setState(() {
+                        double newPosition =
+                            (details.localPosition.dx / (size.width * 0.9))
+                                .clamp(0.0, 1.0);
+                        Duration seekPosition = Duration(
+                            seconds: (newPosition * totalDuration.inSeconds)
+                                .toInt());
+                        _controller.seekTo(seekPosition);
+                        currentDuration = seekPosition;
+                      });
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: size.width * 0.9,
+                          height: size.height * 0.0105,
+                          decoration: BoxDecoration(
+                            color: Color(0xffD9D9D9),
+                            borderRadius: BorderRadius.circular(20.0),
+                          ),
                         ),
+                        Positioned(
+                          left: 0,
+                          right: (1 -
+                                  currentDuration.inSeconds /
+                                      totalDuration.inSeconds) *
+                              size.width *
+                              0.9,
+                          child: Container(
+                            height: size.height * 0.011,
+                            decoration: BoxDecoration(
+                              color: Color(0xfFC4318).withOpacity(1),
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        formatDuration(currentDuration),
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
-                    ),
-                  ),
-                  // 현재 재생 시간
-                  Align(
-                    alignment: Alignment(-1, 1),
-                    child: Text(
-                      formatDuration(currentDuration),
-                      style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment(1, 1),
-                    child: Text(
-                      formatDuration(totalDuration),
-                      style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
-                    ),
+                      Spacer(),
+                      Text(
+                        formatDuration(totalDuration),
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              /*child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // 현재 재생 시간
-                    Text(
-                      formatDuration(currentDuration),
-                      style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
-                    ),
-                    // 전체 재생 시간
-                    Text(
-                      formatDuration(totalDuration),
-                      style: TextStyle(fontSize: 16, color: Color(0xff8B8B8B)),
-                    ),
-                  ],
-                ),*/
             ),
-          ),
-        ],
+            SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon:
+                      Icon(Icons.skip_previous, size: 60, color: Colors.white),
+                  onPressed: _previousMusic,
+                ),
+                SizedBox(width: 15),
+                IconButton(
+                  icon: isPlaying
+                      ? Icon(Icons.pause, size: 85, color: Colors.white)
+                      : Icon(Icons.play_arrow, size: 85, color: Colors.white),
+                  onPressed: isPlaying ? _pauseMusic : _resumeMusic,
+                ),
+                SizedBox(width: 15),
+                IconButton(
+                  icon: Icon(Icons.skip_next, size: 60, color: Colors.white),
+                  onPressed: _nextMusic,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

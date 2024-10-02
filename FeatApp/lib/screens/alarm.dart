@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:feat/utils/appbar.dart';
 
-class AlarmPage extends StatefulWidget {
-  const AlarmPage({super.key});
+class Alarm2Page extends StatefulWidget {
+  const Alarm2Page({super.key});
 
   @override
-  State<AlarmPage> createState() => _AlarmPageState();
+  State<Alarm2Page> createState() => _Alarm2PageState();
 }
 
-class _AlarmPageState extends State<AlarmPage> {
+class _Alarm2PageState extends State<Alarm2Page> {
 
   @override
   Widget build(BuildContext context) {

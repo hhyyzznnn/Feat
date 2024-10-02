@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:camera/camera.dart';
@@ -6,29 +7,28 @@ import 'screens/home.dart';
 import 'screens/profile.dart';
 import 'screens/signup.dart';
 import 'screens/signin.dart';
-import 'screens/alarm.dart';
 import 'screens/camera.dart';
 import 'screens/calender.dart';
 import 'screens/friendpage.dart';
 import 'screens/ootd.dart';
-import 'screens/music_rec2.dart';
+import 'screens/alarm2.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
-  final firstCamera = cameras.isNotEmpty ? cameras.first : null; // 카메라가 없을 경우 처리
-  runApp(FeatApp(firstCamera: firstCamera)); //FeatApp(firstCamera: firstCamera)
+  final firstCamera = cameras.isNotEmpty ? cameras.first : null;
+  runApp(FeatApp(firstCamera: firstCamera)); //FeatApp(firstCamera: firstCamera), MaterialApp(home: MusicRecPage())
 }
 
 class FeatApp extends StatelessWidget {
-  final CameraDescription? firstCamera; // 카메라가 없을 경우 null 허용
+  final CameraDescription? firstCamera;
 
   const FeatApp({super.key, required this.firstCamera});
 
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString('userId');
-    return userId != null;
+    return userId == null;
   }
 
   Future<bool> isPhysicalDevice() async {
@@ -84,13 +84,12 @@ class FeatApp extends StatelessWidget {
         'calender': (context) => CalenderPage(),
         'friendpage': (context) => FriendPage(),
         'ootd': (context) => ootdHomePage(),
-        'rec': (context) => MusicRecPage(),
       },
     );
   }
 }
+*/
 
-/*
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:camera/camera.dart';
@@ -98,12 +97,11 @@ import 'screens/home.dart';
 import 'screens/profile.dart';
 import 'screens/signup.dart';
 import 'screens/signin.dart';
-import 'screens/alarm.dart';
+import 'screens/alarm2.dart';
 import 'screens/camera.dart';
 import 'screens/calender.dart';
 import 'screens/friendpage.dart';
 import 'screens/ootd.dart';
-import 'screens/music_rec.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -120,7 +118,7 @@ class FeatApp extends StatelessWidget {
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString('userId');
-    return userId == null; // '=='를 '!='로 수정해야 함. 코딩 위해서 임의로 바꿔놓음
+    return userId != null; // '=='를 '!='로 수정해야 함. 코딩 위해서 임의로 바꿔놓음
   }
 
   @override
@@ -148,9 +146,7 @@ class FeatApp extends StatelessWidget {
         'calender': (context) => CalenderPage(),
         'friendpage': (context) => FriendPage(),
         'ootd': (context) => ootdHomePage(),
-        'rec': (context) => MusicRecPage()
       },
     );
   }
 }
-*/

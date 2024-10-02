@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'ootd.dart';
 import 'package:feat/utils/appbar.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CalenderPage extends StatelessWidget {
   CalenderPage({super.key});
@@ -30,13 +31,24 @@ class CalenderDate extends StatefulWidget {
 
 class _CalenderDateState extends State<CalenderDate> {
   List<String?> specialDates = ["2024-09-27", "2024-09-23"];
+  String? userId;
 
-  final String userId = "user1";
+  Future<void> loadUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
+
+    if (userId != null) {
+      print('User ID: $userId');
+      await loadDates();
+    } else {
+      print('User ID not found');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    loadDates();
+    loadUserId();
   }
 
 
@@ -74,7 +86,6 @@ class _CalenderDateState extends State<CalenderDate> {
   String yearModify(int? year) {
     return year?.toString() ?? '';
   }
-
 
   @override
   Widget build(BuildContext context) {

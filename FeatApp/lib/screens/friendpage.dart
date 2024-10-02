@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:feat/utils/appbar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:feat/utils/saveId.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FriendPage extends StatefulWidget {
   const FriendPage({super.key});
@@ -12,23 +12,29 @@ class FriendPage extends StatefulWidget {
 }
 
 class _FriendPageState extends State<FriendPage> {
-  List<String?> friends = [];// 검색된 친구 목록 저장
-  List<String?> searchResults = [];  // 검색된 유저 목록 저장
- 
+  List<String?> friends = []; // 검색된 친구 목록 저장
+  List<String?> searchResults = []; // 검색된 유저 목록 저장
+
   String searchQuery = "";
   bool isSearching = false; // 검색 상태를 확인하는 변수
   String? userId;
 
   Future<void> loadUserId() async {
-    userId = await saveId();
-    // userId를 사용하여 추가 작업 수행
-    print('User ID: $userId');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
+
+    if (userId != null) {
+      print('User ID: $userId');
+      await loadFriends();
+    } else {
+      print('User ID not found');
+    }
   }
+
 
   @override
   void initState() {
     super.initState();
-    loadFriends();
     loadUserId();
   }
 
@@ -44,8 +50,7 @@ class _FriendPageState extends State<FriendPage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          friends = List<String?>.from(
-              jsonDecode(response.body));
+          friends = List<String?>.from(jsonDecode(response.body));
           print(friends);
         });
       } else {
@@ -83,22 +88,22 @@ class _FriendPageState extends State<FriendPage> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-          backgroundColor: Colors.white,
+        backgroundColor: Colors.white,
         appBar: buildAppBar(context, '친구'),
         body: Column(
           children: [
             Search(
-                onSearch: (query) {
-                  setState(() {
-                    isSearching = query.isNotEmpty;
-                    searchQuery = query;
-                  });
-                  if (isSearching) {
-                    searchUsers(query);
-                  } else {
-                    loadFriends();
-                  }
-                },
+              onSearch: (query) {
+                setState(() {
+                  isSearching = query.isNotEmpty;
+                  searchQuery = query;
+                });
+                if (isSearching) {
+                  searchUsers(query);
+                } else {
+                  loadFriends();
+                }
+              },
             ),
             Expanded(
               child: ListView.builder(
@@ -116,7 +121,6 @@ class _FriendPageState extends State<FriendPage> {
   }
 }
 
-
 class Search extends StatefulWidget {
   final Function(String) onSearch;
 
@@ -129,7 +133,6 @@ class Search extends StatefulWidget {
 class _SearchState extends State<Search> {
   @override
   Widget build(BuildContext context) {
-
     final size = MediaQuery.of(context).size;
 
     return Align(
@@ -171,7 +174,6 @@ class _SearchState extends State<Search> {
   }
 }
 
-
 class FriendComponent extends StatelessWidget {
   final String? friendName;
 
@@ -179,7 +181,6 @@ class FriendComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(context, 'calendar');
@@ -199,25 +200,29 @@ class FriendComponent extends StatelessWidget {
               ),
             ),
             SizedBox(
-                width: 200,
-                height: 100,
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child:Container(
-                          margin: EdgeInsets.fromLTRB(10, 20, 0, 0),
-                          child: Text('친구1', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500))),
+              width: 200,
+              height: 100,
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                        margin: EdgeInsets.fromLTRB(10, 20, 0, 0),
+                        child: Text('친구1',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.w500))),
+                  ),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                      margin: EdgeInsets.fromLTRB(12, 0, 0, 0),
+                      child: Text('ID',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w500)),
                     ),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Container(
-                        margin: EdgeInsets.fromLTRB(12, 0, 0, 0),
-                        child: Text('ID', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:feat/screens/signin.dart';
 import 'package:http/http.dart' as http;
 import 'package:feat/utils/appbar.dart';
-import 'package:feat/utils/saveId.dart';
 
 class ProFilePage extends StatefulWidget {
   const ProFilePage({super.key});
@@ -18,10 +17,9 @@ class ProFilePage extends StatefulWidget {
 }
 
 class _ProFilePageState extends State<ProFilePage> {
-  File? _image;
   final ImagePicker picker = ImagePicker();
+  File? _image;
   String? userId;
-
   Map userSetting = {}; // 유저 세팅을 저장할 맵
   Map userInfo = {}; // 유저 정보를 저장할 맵
   Map ProfileImage = {}; // 프로필 사진 주소를 저장할 맵
@@ -157,20 +155,24 @@ class _ProFilePageState extends State<ProFilePage> {
   } // 계정 삭제 함수
 
   Future<void> loadUserId() async {
-    userId = await saveId();
-    // userId를 사용하여 추가 작업 수행
-    print('User ID: $userId');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
+
+    if (userId != null) {
+      print('User ID: $userId');
+      await requestPermissions();
+      await loadInfo();
+      await loadSettings();
+      await loadProfile();
+    } else {
+      print('User ID not found');
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    requestPermissions();
-    loadInfo();
-    loadSettings();
-    loadProfile();
     loadUserId();
-
   }
 
   Future<void> requestPermissions() async {
@@ -353,23 +355,24 @@ class _ProFilePageState extends State<ProFilePage> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      backgroundColor: Colors.white,
         appBar: buildAppBar(context, '프로필'),
         body: SingleChildScrollView(
           child: Container(
             padding: EdgeInsets.fromLTRB(
-              size.width * 0.025,
+              size.width * 0.01,
               size.height * 0.035,
-              size.width * 0.025,
+              size.width * 0.01,
               size.width * 0.015,
             ),
-            color: Colors.white,
+            color: Colors.black,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      color: Color(0xff3f3f3f)),
+                      color: Colors.black),
                   child: Row(
                     children: [
                       Stack(
@@ -380,13 +383,9 @@ class _ProFilePageState extends State<ProFilePage> {
                             child: CircleAvatar(
                               radius: size.width * 0.2,
                               backgroundImage:
-                                  ProfileImage['profile'] != null &&
-                                          ProfileImage['profile'].isNotEmpty
-                                      ? NetworkImage(ProfileImage['profile'])
-                                          as ImageProvider
-                                      : (_image != null
-                                          ? FileImage(_image!)
-                                          : const AssetImage('hanni.jpg')),
+                                  ProfileImage['profile'] != null && ProfileImage['profile'].isNotEmpty
+                                      ? NetworkImage(ProfileImage['profile']) as ImageProvider
+                                      : (_image != null ? FileImage(_image!) : const AssetImage('assets/hanni.jpeg')),
                             ),
                           ),
                           Padding(
@@ -415,7 +414,7 @@ class _ProFilePageState extends State<ProFilePage> {
                                   color: Colors.white,
                                   fontSize: size.width * 0.06,
                                   fontWeight: FontWeight.bold)),
-                          Text('ID',
+                          Text('${userId}',
                               style: TextStyle(
                                   color: Colors.white,
                                   fontSize: size.width * 0.05))
@@ -429,13 +428,13 @@ class _ProFilePageState extends State<ProFilePage> {
                   child: Text('알림',
                       style: TextStyle(
                           fontSize: size.width * 0.04,
-                          color: Colors.grey,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold)),
                 ),
                 Container(
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      color: Color(0xff3f3f3f)),
+                      color: Colors.black12),
                   child: Column(
                     children: [
                       ListTile(
@@ -444,13 +443,13 @@ class _ProFilePageState extends State<ProFilePage> {
                             style: TextStyle(color: Colors.white)),
                         trailing: CupertinoSwitch(
                           value: reqNotifications,
-                          activeColor: Colors.black,
+                          activeColor: Color(0xFFFC4318),
                           onChanged: toggleReqNotifications,
                         ),
                       ),
                       Divider(
                           height: 1,
-                          color: Colors.grey,
+                          color: Colors.white,
                           indent: size.width * 0.025,
                           endIndent: size.width * 0.025),
                       ListTile(
@@ -462,13 +461,13 @@ class _ProFilePageState extends State<ProFilePage> {
                             style: TextStyle(color: Colors.white)),
                         trailing: CupertinoSwitch(
                           value: friNotifications,
-                          activeColor: Colors.black,
+                          activeColor: Color(0xFFFC4318),
                           onChanged: toggleFriNotifications,
                         ),
                       ),
                       Divider(
                           height: 1,
-                          color: Colors.grey,
+                          color: Colors.white,
                           indent: size.width * 0.025,
                           endIndent: size.width * 0.025),
                       ListTile(
@@ -482,7 +481,7 @@ class _ProFilePageState extends State<ProFilePage> {
                         ),
                         trailing: CupertinoSwitch(
                           value: allNotifications,
-                          activeColor: Colors.black,
+                          activeColor: Color(0xFFFC4318),
                           onChanged: toggleAllNotifications,
                         ),
                       ),
@@ -494,14 +493,14 @@ class _ProFilePageState extends State<ProFilePage> {
                   child: Text('개인정보',
                       style: TextStyle(
                           fontSize: size.width * 0.04,
-                          color: Colors.grey,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold)),
                 ),
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      color: Color(0xff3f3f3f)),
+                      color: Colors.black),
                   child: Column(
                     children: [
                       ListTile(
@@ -557,7 +556,7 @@ class _ProFilePageState extends State<ProFilePage> {
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30)),
-                            backgroundColor: Color(0xff3f3f3f),
+                            backgroundColor: Colors.black,
                             minimumSize:
                                 Size(size.width * 0.45, size.height * 0.075),
                             alignment: Alignment.center),
@@ -572,7 +571,7 @@ class _ProFilePageState extends State<ProFilePage> {
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30)),
-                            backgroundColor: Color(0xff3f3f3f),
+                            backgroundColor: Colors.black,
                             minimumSize:
                                 Size(size.width * 0.45, size.height * 0.075),
                             alignment: Alignment.center),
