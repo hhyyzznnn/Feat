@@ -3,6 +3,8 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:feat/utils/appbar.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class MusicRecPage extends StatefulWidget {
   final List<String> youtubeList;
@@ -15,7 +17,7 @@ class MusicRecPage extends StatefulWidget {
 
 class _MusicRecPageState extends State<MusicRecPage> {
   late List<String> musicList;
-
+  String? userId;
   late YoutubePlayerController _controller;
   int currentSongIndex = 0;
   bool isPlaying = false;
@@ -28,6 +30,24 @@ class _MusicRecPageState extends State<MusicRecPage> {
   String? currentChannelTitle = '';
 
   List<Map<String, String>> videoInfos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserId();
+    _initializeMusicList();
+  }
+
+  Future<void> loadUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId'); // 유저 아이디 불러오기
+
+    if (userId != null) {
+      print('User ID: $userId');
+    } else {
+      print('User ID not found');
+    }
+  }
 
   Future<void> _initializePlayer() async {
     _controller = YoutubePlayerController(
@@ -103,10 +123,32 @@ class _MusicRecPageState extends State<MusicRecPage> {
     throw Exception('Failed to load video info');
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeMusicList(); // 음악 리스트 초기화 함수 호출
+  Future<void> sendUrlToServer(String url) async {
+    final serverUrl = Uri.parse('http://192.168.116.212:8080/select/music');
+    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    final Map<String, String> data = {
+      'music': url,
+      'userId': userId!,
+      'date': today
+    };
+
+    // HTTP POST 요청을 보냅니다.
+    final http.Response response = await http.post(
+      serverUrl,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        // 요청 헤더에 Content-Type 지정
+      },
+      body: jsonEncode(data), // 데이터를 JSON 형식으로 인코딩하여 전송
+    );
+
+    // 응답 상태 코드 확인
+    if (response.statusCode == 200) {
+      print('URL 전송 성공: ${response.body}');
+    } else {
+      print('URL 전송 실패: ${response.statusCode}');
+    }
   }
 
   Future<void> _initializeMusicList() async {
@@ -466,7 +508,31 @@ class _MusicRecPageState extends State<MusicRecPage> {
                 ],
               ),
             ),
-            SizedBox(height: 40),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () async {
+                String currentVideoUrl = musicList[currentSongIndex];
+                await sendUrlToServer(currentVideoUrl);
+                Navigator.pushNamed(context, 'home');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFC4318), // 버튼 색상
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                shadowColor: Colors.grey.withOpacity(0.5), // 그림자 색상
+                elevation: 10, // 그림자의 높이 (숫자가 클수록 더 진하고 큰 그림자)
+              ),
+              child: Text(
+                'Upload',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

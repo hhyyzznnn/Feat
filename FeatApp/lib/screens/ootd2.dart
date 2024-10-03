@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart'; // 추가된 부분
 
 class ootdHomePage extends StatefulWidget {
   ootdHomePage({super.key, this.year, this.month, this.day});
@@ -51,7 +52,7 @@ class _ootdHomePageState extends State<ootdHomePage> {
           print(Posts);
         });
       } else {
-        throw Exception('Failed to load profile image');
+        throw Exception('Failed to load posts');
       }
     } catch (e) {
       print('Error: $e');
@@ -114,7 +115,7 @@ class _ootdHomePageState extends State<ootdHomePage> {
                     Navigator.pushNamed(context, 'alarm');
                   },
                   icon:
-                      Icon(Icons.notifications_none, size: size.height * 0.035),
+                  Icon(Icons.notifications_none, size: size.height * 0.035),
                   color: Color(0xff3F3F3F),
                 ),
               ),
@@ -133,15 +134,15 @@ class _ootdHomePageState extends State<ootdHomePage> {
                     ),
                     child: ClipOval(
                       child: ProfileImage['profile'] != null &&
-                              ProfileImage['profile'].isNotEmpty
+                          ProfileImage['profile'].isNotEmpty
                           ? Image.network(
-                              ProfileImage['profile'],
-                              fit: BoxFit.cover,
-                            )
+                        ProfileImage['profile'],
+                        fit: BoxFit.cover,
+                      )
                           : Icon(
-                              Icons.person,
-                              size: size.height * 0.035,
-                            ),
+                        Icons.person,
+                        size: size.height * 0.035,
+                      ),
                     ),
                   ),
                 ),
@@ -153,23 +154,56 @@ class _ootdHomePageState extends State<ootdHomePage> {
             year: widget.year,
             month: widget.month,
             day: widget.day,
-            url: imageUrl),
+            url: imageUrl,
+            musicUrl: Posts['music']), // 추가된 부분
       ),
     );
   }
 }
 
-class ootdBody extends StatelessWidget {
-  ootdBody({super.key, this.year, this.month, this.day, this.url});
+class ootdBody extends StatefulWidget {
+  ootdBody({super.key, this.year, this.month, this.day, this.url, this.musicUrl});
 
   var year;
   var month;
   var day;
   var url;
+  var musicUrl;
+
+  @override
+  _ootdBodyState createState() => _ootdBodyState();
+}
+
+class _ootdBodyState extends State<ootdBody> {
+  late YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.musicUrl != null) {
+      final videoId = YoutubePlayer.convertUrlToId(widget.musicUrl);
+      _controller = YoutubePlayerController(
+        initialVideoId: videoId ?? '',
+        flags: YoutubePlayerFlags(
+          autoPlay: true, // 자동 재생
+          mute: false, // 음소거 설정
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // 리소스 해제
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    if (_controller == null) {
+      return CircularProgressIndicator(); // 초기화가 안된 경우 대체 UI
+    }
     return Container(
       color: Colors.white,
       child: Column(
@@ -178,7 +212,7 @@ class ootdBody extends StatelessWidget {
             children: [
               Container(
                   margin: EdgeInsets.fromLTRB(27, 10, 0, 10),
-                  child: Text('$year. $month. $day',
+                  child: Text('${widget.year}. ${widget.month}. ${widget.day}',
                       style: TextStyle(fontSize: 22))),
               Spacer()
             ],
@@ -202,13 +236,14 @@ class ootdBody extends StatelessWidget {
               // 경계에 맞게 자르기
               borderRadius: BorderRadius.circular(10),
               child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: url != null
-                      ? Image.network(
-                          url,
-                          fit: BoxFit.cover,
-                        )
-                      : Center(child: Text('No Image'))),
+                aspectRatio: 16 / 9,
+                child: widget.musicUrl != null
+                    ? YoutubePlayer(
+                  controller: _controller,
+                  showVideoProgressIndicator: true,
+                )
+                    : Center(child: Text('No Video')),
+              ),
             ),
           ),
           Row(
@@ -238,7 +273,7 @@ class ootdBody extends StatelessWidget {
                     Align(
                         alignment: Alignment.centerLeft,
                         child:
-                            Text('Music Name', style: TextStyle(fontSize: 22))),
+                        Text('Music Name', style: TextStyle(fontSize: 22))),
                     Align(
                         alignment: Alignment.centerLeft,
                         child: Text('0000', style: TextStyle(fontSize: 15))),

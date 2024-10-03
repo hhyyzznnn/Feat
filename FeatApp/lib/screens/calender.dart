@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'ootd.dart';
+import 'ootd3.dart';
 import 'package:feat/utils/appbar.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +13,7 @@ class CalenderPage extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
           appBar: buildAppBar(context, '달력'),
-          body: Container(color: Colors.white, child: CalenderHomePage())),
+          body: Container(color: Colors.black, child: CalenderHomePage())),
     );
   }
 }
@@ -97,7 +97,7 @@ class _CalenderDateState extends State<CalenderDate> {
           height: 50,
           margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20), color: Colors.white));
+              borderRadius: BorderRadius.circular(20), color: Colors.black));
     } else if (widget.day != 0 && specialDates.contains(formattedDate)) {
       return GestureDetector(
         onTap: () {
@@ -117,12 +117,12 @@ class _CalenderDateState extends State<CalenderDate> {
             height: 50,
             margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20), color: Color(0xFFFC4318).withOpacity(0.5)),
+                borderRadius: BorderRadius.circular(20), color: Color(0xFFFC4318)),
             child: Align(
                 alignment: Alignment.center,
                 child: Text(widget.day.toString(),
                     style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.w500)))),
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.white)))),
       );
     }
     else {
@@ -144,12 +144,12 @@ class _CalenderDateState extends State<CalenderDate> {
             height: 50,
             margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20), color: Colors.white),
+                borderRadius: BorderRadius.circular(20), color: Colors.black),
             child: Align(
                 alignment: Alignment.center,
                 child: Text(widget.day.toString(),
                     style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.w500)))),
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.white)))),
       );
     }
   }
@@ -224,11 +224,11 @@ class _CalenderHomePageState extends State<CalenderHomePage> {
                 alignment: Alignment.topLeft,
                 child: Container(
                   margin: EdgeInsets.fromLTRB(20, 30, 0, 10),
-                  decoration: BoxDecoration(color: Colors.white),
+                  decoration: BoxDecoration(color: Colors.black),
                   child: Text(
                       '${yearAndMonth(index, widget.startYear, widget.startMonth)[0]}__${yearAndMonth(index, widget.startYear, widget.startMonth)[1]}',
                       style:
-                      TextStyle(fontSize: 25, fontWeight: FontWeight.w600)),
+                      TextStyle(fontSize: 25, fontWeight: FontWeight.w600, color: Colors.white)),
                 )),
             SizedBox(width: 450, height: 70, child: CalendarBar()),
             SizedBox(
@@ -362,10 +362,10 @@ class CalendarBar extends StatelessWidget {
               height: 50,
               margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10), color: Colors.white),
+                  borderRadius: BorderRadius.circular(10), color: Colors.black),
               child: Align(
                   alignment: Alignment.center,
-                  child: Text(date[index], style: TextStyle(fontSize: 20))));
+                  child: Text(date[index], style: TextStyle(fontSize: 20, color: Colors.white))));
         },
       ),
     );

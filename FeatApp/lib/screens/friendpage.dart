@@ -31,7 +31,6 @@ class _FriendPageState extends State<FriendPage> {
     }
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -86,36 +85,34 @@ class _FriendPageState extends State<FriendPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: buildAppBar(context, '친구'),
-        body: Column(
-          children: [
-            Search(
-              onSearch: (query) {
-                setState(() {
-                  isSearching = query.isNotEmpty;
-                  searchQuery = query;
-                });
-                if (isSearching) {
-                  searchUsers(query);
-                } else {
-                  loadFriends();
-                }
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: buildAppBar(context, '친구'),
+      body: Column(
+        children: [
+          Search(
+            onSearch: (query) {
+              setState(() {
+                isSearching = query.isNotEmpty;
+                searchQuery = query;
+              });
+              if (isSearching) {
+                searchUsers(query);
+              } else {
+                loadFriends();
+              }
+            },
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: isSearching ? searchResults.length : friends.length,
+              itemBuilder: (context, index) {
+                final displayedList = isSearching ? searchResults : friends;
+                return FriendComponent(friendName: displayedList[index]);
               },
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: isSearching ? searchResults.length : friends.length,
-                itemBuilder: (context, index) {
-                  final displayedList = isSearching ? searchResults : friends;
-                  return FriendComponent(friendName: displayedList[index]);
-                },
-              ),
-            )
-          ],
-        ),
+          )
+        ],
       ),
     );
   }

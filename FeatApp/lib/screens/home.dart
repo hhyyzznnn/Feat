@@ -188,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                             ],
                           )),
-                      Center(child: Text('SoundWave')) // _Musicvisualizer()
+                      Center(child: _Musicvisualizer()) // _Musicvisualizer()
                     ],
                   )
                 ],
@@ -315,7 +315,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/*
+
 class _Musicvisualizer extends StatelessWidget {
   List<int> duration = [
     1000,
@@ -393,7 +393,6 @@ class _VisualComponentState extends State<VisualComponent>
         height: animation.value);
   }
 }
-*/
 
 /*class SoundWaveform extends StatefulWidget {
   const SoundWaveform({super.key});

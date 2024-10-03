@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:feat/screens/home.dart';
 import 'package:feat/screens/signup.dart';
 
 class SignInPage extends StatelessWidget {
@@ -10,10 +9,11 @@ class SignInPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Login',
-      home: Login(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Login'),
+      ),
+      body: Login(),
     );
   }
 }
@@ -57,11 +57,7 @@ class _LoginState extends State<Login> {
 
     if (response.statusCode == 200) {
       saveUserId(userId);
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(),
-          ));
+      Navigator.pushReplacementNamed(context, 'home');
     } else {
       showSnackBar(
           context, const Text('아이디 또는 비밀번호가 잘못되었습니다. 아이디와 비밀번호를 정확히 입력해주세요.'));
